@@ -234,9 +234,13 @@ class HolderScreen extends ConsumerWidget {
                         height: isExpanded ? 420 : 100, // 调整高度，增加更多空间给内容
                         // 添加clipBehavior属性，防止子组件溢出
                         clipBehavior: Clip.antiAlias, // 修改点1：添加裁剪行为，防止过渡动画中内容溢出
-                        child: isExpanded
-                            ? _buildExpandedCard(context, ref, card, cardIndex)
-                            : _buildCollapsedCard(card),
+                        child: OverflowBox( // 添加 OverflowBox 来处理过渡期间的溢出
+                          maxHeight: isExpanded ? 420 : 100,
+                          alignment: Alignment.topCenter,
+                          child: isExpanded
+                              ? _buildExpandedCard(context, ref, card, cardIndex)
+                              : _buildCollapsedCard(card),
+                        ),
                       ),
                     );
                   },

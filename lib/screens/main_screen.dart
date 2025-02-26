@@ -27,6 +27,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     final currentTabIndex = ref.watch(providerCurrentTabIndex);
     final currentTheme = ref.watch(providerTheme);
     final user = FirebaseAuth.instance.currentUser;
+    final userPhotoURL = user?.photoURL;
 
     final isDarkMode = currentTheme == ThemeMode.dark ||
         (currentTheme == ThemeMode.system &&
@@ -76,14 +77,18 @@ class _MainScreenState extends ConsumerState<MainScreen> {
           child: IconButton(
             icon: CircleAvatar(
               backgroundColor: Theme.of(context).colorScheme.primary,
-              radius: 16.0,  // 添加这行来设置大小
-              child: Text(
+              radius: 16.0,
+              // 修改这里以使用自定义照片
+              backgroundImage: userPhotoURL != null ? NetworkImage(userPhotoURL) : null,
+              child: userPhotoURL == null
+                  ? Text(
                 user?.email?.substring(0, 1).toUpperCase() ?? 'U',
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.onPrimary,
-                  fontSize: 14.0,  // 调整文字大小
+                  fontSize: 14.0,
                 ),
-              ),
+              )
+                  : null,
             ),
             onPressed: () {
               Navigator.push(
@@ -91,7 +96,10 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                 MaterialPageRoute(
                   builder: (context) => const UserSettingsScreen(),
                 ),
-              );
+              ).then((_) {
+                // 当从UserSettingsScreen返回时，强制刷新UI以显示可能更新的头像
+                setState(() {});
+              });
             },
           ),
         ),
@@ -101,7 +109,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
             child: IconButton(
               icon: Icon(
                 isDarkMode ? Icons.light_mode : Icons.dark_mode,
-                size: 32.0,  // 调整大小和 CircleAvatar 直径一致
+                size: 32.0,
               ),
               onPressed: () async {
                 await ref.read(providerTheme.notifier).toggleTheme();

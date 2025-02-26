@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:veerpeercard/models/chat_message.dart';
+import 'package:veerpeercard/utils/logger.dart';
 
 class ChatService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -143,7 +144,7 @@ class ChatService {
             });
           }
         } catch (e) {
-          print('Error fetching user data: $e');
+          logger.e('Error fetching user data', e, StackTrace.current);
         }
       }
 

@@ -1,5 +1,6 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:veerpeercard/utils/logger.dart';
 
 class NotificationService {
   final FirebaseMessaging _fcm = FirebaseMessaging.instance;
@@ -15,7 +16,7 @@ class NotificationService {
     );
 
     if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-      print('通知权限授予');
+      logger.i('Notification permission granted');
 
       // 初始化本地通知
       const AndroidInitializationSettings initializationSettingsAndroid =
@@ -66,7 +67,7 @@ class NotificationService {
 
   void _handleBackgroundMessage(RemoteMessage message) {
     // 处理通知点击事件
-    print('通知点击: ${message.data}');
+    logger.i('Notification clicked', message.data);
   }
 
   // 获取设备令牌

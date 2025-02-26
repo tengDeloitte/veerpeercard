@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:veerpeercard/utils/logger.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -12,8 +13,8 @@ class AuthService {
   Future<User?> register(String email, String password, String name) async {
     try {
       UserCredential result = await _auth.createUserWithEmailAndPassword(
-          email: email,
-          password: password
+        email: email,
+        password: password,
       );
 
       // 创建用户资料
@@ -27,7 +28,7 @@ class AuthService {
 
       return result.user;
     } catch (e) {
-      print('注册错误: $e');
+      logger.e('Registration error', e, StackTrace.current);
       return null;
     }
   }
@@ -36,8 +37,8 @@ class AuthService {
   Future<User?> login(String email, String password) async {
     try {
       UserCredential result = await _auth.signInWithEmailAndPassword(
-          email: email,
-          password: password
+        email: email,
+        password: password,
       );
 
       // 更新在线状态
@@ -48,7 +49,7 @@ class AuthService {
 
       return result.user;
     } catch (e) {
-      print('登录错误: $e');
+      logger.e('Login error', e, StackTrace.current);
       return null;
     }
   }
@@ -66,7 +67,7 @@ class AuthService {
 
       await _auth.signOut();
     } catch (e) {
-      print('登出错误: $e');
+      logger.e('Logout error', e, StackTrace.current);
     }
   }
 }

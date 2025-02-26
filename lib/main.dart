@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:veerpeercard/providers/theme_provider.dart';
+import 'package:veerpeercard/providers/auth_provider.dart'; // 引入auth_provider
 import 'package:veerpeercard/screens/main_screen.dart';
-import 'package:veerpeercard/screens/login_screen.dart';  // 需要创建
+import 'package:veerpeercard/screens/login_screen.dart';
 import 'firebase_options.dart';
 
 void main() async {
@@ -29,18 +29,13 @@ void main() async {
   );
 }
 
-// 创建认证状态提供器
-final authStateProvider = StreamProvider<User?>((ref) {
-  return FirebaseAuth.instance.authStateChanges();
-});
-
 class TheApp extends ConsumerWidget {
   const TheApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(providerTheme);
-    final authState = ref.watch(authStateProvider);
+    final authState = ref.watch(authStateProvider); // 使用来自auth_provider.dart的provider
 
     return MaterialApp(
       title: 'VeerPeerCard',

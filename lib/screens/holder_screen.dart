@@ -36,7 +36,7 @@ class HolderScreen extends ConsumerWidget {
     final cardState = ref.watch(providerHolderState); // 当前卡片状态
     final cardNotifier = ref.read(providerHolderState.notifier); // 状态管理器
 
-    // 使用BusinessCard类来创建数据
+// 使用BusinessCard类来创建数据
     final List<BusinessCard> cards = [
       BusinessCard(
         name: "John D. Smith",
@@ -202,46 +202,13 @@ class HolderScreen extends ConsumerWidget {
                         card.category == categoryCards[index].category
                     );
                     final card = categoryCards[index];
-                    final isExpanded = cardIndex == cardState;
 
                     return GestureDetector(
                       onTap: () {
-                        if (isExpanded) {
-                          cardNotifier.saveState(null, false); // 收起卡片
-                        } else {
-                          cardNotifier.saveState(cardIndex, false); // 展开卡片
-                        }
+                        // 点击卡片时，显示对话框
+                        _showCardDialog(context, ref, card, cardIndex);
                       },
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 300),
-                        margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-                        padding: const EdgeInsets.all(0), // 移除内边距以便自定义卡片设计
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(10),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.grey.withOpacity(0.4),
-                              blurRadius: 8,
-                              offset: const Offset(0, 3),
-                            ),
-                          ],
-                          border: Border.all(
-                            color: Colors.grey.withOpacity(0.2),
-                            width: 1,
-                          ),
-                        ),
-                        height: isExpanded ? 420 : 100, // 调整高度，增加更多空间给内容
-                        // 添加clipBehavior属性，防止子组件溢出
-                        clipBehavior: Clip.antiAlias, // 修改点1：添加裁剪行为，防止过渡动画中内容溢出
-                        child: OverflowBox( // 添加 OverflowBox 来处理过渡期间的溢出
-                          maxHeight: isExpanded ? 420 : 100,
-                          alignment: Alignment.topCenter,
-                          child: isExpanded
-                              ? _buildExpandedCard(context, ref, card, cardIndex)
-                              : _buildCollapsedCard(card),
-                        ),
-                      ),
+                      child: _buildCollapsedCard(card),
                     );
                   },
                 ),
@@ -253,8 +220,123 @@ class HolderScreen extends ConsumerWidget {
     );
   }
 
+  // 显示卡片对话框
+  void _showCardDialog(BuildContext context, WidgetRef ref, BusinessCard card, int index) {
+    final cardNotifier = ref.read(providerHolderState.notifier);
+    cardNotifier.saveState(index, false); // 保存状态但不显示背面
+
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        insetPadding: const EdgeInsets.all(20.0),
+        child: Container(
+          width: double.infinity,
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.85,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Flexible(
+                child: Consumer(
+                  builder: (context, ref, _) {
+                    final showBack = ref.watch(providerHolderState.notifier).showBack;
+                    return GestureDetector(
+                      onTap: () {
+                        cardNotifier.toggleCardFace();
+                      },
+                      child: SingleChildScrollView(
+                        child: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 500),
+                          switchInCurve: Curves.easeInOutCubic,
+                          switchOutCurve: Curves.easeInOutCubic,
+                          transitionBuilder: (Widget child, Animation<double> animation) {
+                            final rotate = Tween(begin: pi, end: 0.0).animate(animation);
+                            return AnimatedBuilder(
+                              animation: rotate,
+                              child: child,
+                              builder: (context, child) {
+                                final isUnder = showBack != (ValueKey('back') == child?.key);
+                                final value = isUnder ? min(rotate.value, pi / 2) : rotate.value;
+                                return Transform(
+                                  transform: Matrix4.rotationY(value),
+                                  alignment: Alignment.center,
+                                  child: value < pi / 2 ? child : Container(),
+                                );
+                              },
+                            );
+                          },
+                          child: showBack
+                              ? _buildCardBack(card)
+                              : _buildCardFront(card),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              // 底部操作按钮
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade200,
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(16),
+                    bottomRight: Radius.circular(16),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _buildActionButton(
+                      icon: Icons.phone,
+                      label: 'Call',
+                      color: Colors.green.shade700,
+                      onPressed: () {
+                        // 打电话功能
+                      },
+                    ),
+                    _buildActionButton(
+                      icon: Icons.message,
+                      label: 'Message',
+                      color: Colors.orange.shade700,
+                      onPressed: () {
+                        // 发短信功能
+                      },
+                    ),
+                    _buildActionButton(
+                      icon: Icons.email,
+                      label: 'Email',
+                      color: Colors.blue.shade700,
+                      onPressed: () {
+                        // 发邮件功能
+                      },
+                    ),
+                    _buildActionButton(
+                      icon: Icons.close,
+                      label: 'Close',
+                      color: Colors.grey.shade700,
+                      onPressed: () {
+                        Navigator.of(context).pop(); // 关闭对话框
+                        cardNotifier.resetState(); // 重置状态
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildCollapsedCard(BusinessCard card) {
     return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(10),
@@ -353,106 +435,6 @@ class HolderScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildExpandedCard(BuildContext context, WidgetRef ref,
-      BusinessCard card, int index) {
-    final cardNotifier = ref.read(providerHolderState.notifier);
-    final showBack = ref.watch(providerHolderState.notifier).showBack;
-
-    return Column(
-      children: [
-        Expanded(
-          child: ClipRRect(
-            borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
-            child: GestureDetector(
-              onTap: () {
-                cardNotifier.saveState(index, !showBack); // 翻转卡片
-              },
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 500),
-                // 修改点2：添加switchInCurve和switchOutCurve参数，使过渡更平滑
-                switchInCurve: Curves.easeInOutCubic,
-                switchOutCurve: Curves.easeInOutCubic,
-                transitionBuilder: (Widget child, Animation<double> animation) {
-                  // 创建3D翻转动画效果
-                  final rotate = Tween(begin: pi, end: 0.0).animate(animation);
-                  return AnimatedBuilder(
-                    animation: rotate,
-                    child: child,
-                    builder: (context, child) {
-                      final isUnder = showBack != (ValueKey('back') == child?.key);
-                      final value = isUnder ? min(rotate.value, pi / 2) : rotate.value;
-                      return Transform(
-                        transform: Matrix4.rotationY(value),
-                        alignment: Alignment.center,
-                        child: value < pi / 2 ? child : Container(),
-                      );
-                    },
-                  );
-                },
-                child: showBack
-                    ? _buildCardBack(card)
-                    : _buildCardFront(card),
-              ),
-            ),
-          ),
-        ),
-        Container(
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
-          decoration: BoxDecoration(
-            color: Colors.grey.shade200,
-            borderRadius: const BorderRadius.only(
-              bottomLeft: Radius.circular(10),
-              bottomRight: Radius.circular(10),
-            ),
-            border: Border(
-              top: BorderSide(
-                color: Colors.grey.withOpacity(0.3),
-                width: 1,
-              ),
-            ),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildActionButton(
-                icon: Icons.phone,
-                label: 'Call',
-                color: Colors.green.shade700,
-                onPressed: () {
-                  // 这里可以添加打电话功能
-                },
-              ),
-              _buildActionButton(
-                icon: Icons.message,
-                label: 'Message',
-                color: Colors.orange.shade700,
-                onPressed: () {
-                  // 这里可以添加发短信功能
-                },
-              ),
-              _buildActionButton(
-                icon: Icons.email,
-                label: 'Email',
-                color: Colors.blue.shade700,
-                onPressed: () {
-                  // 这里可以添加发邮件功能
-                },
-              ),
-              _buildActionButton(
-                icon: Icons.close,
-                label: 'Close',
-                color: Colors.grey.shade700,
-                onPressed: () {
-                  cardNotifier.saveState(null, false); // 收起卡片
-                },
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildCardFront(BusinessCard card) {
     return Container(
       key: const ValueKey('front'),
@@ -505,152 +487,148 @@ class HolderScreen extends ConsumerWidget {
           ),
 
           // 业务信息区域
-          Expanded(
-            child: SingleChildScrollView(
-              // 修改点: 添加physics属性以防止过渡动画中的滚动问题
-              physics: const ClampingScrollPhysics(),
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  // 姓名
-                  Text(
-                    card.name,
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey.shade800,
-                      letterSpacing: 0.5,
-                    ),
-                    textAlign: TextAlign.center,
+          Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // 姓名
+                Text(
+                  card.name,
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey.shade800,
+                    letterSpacing: 0.5,
                   ),
+                  textAlign: TextAlign.center,
+                ),
 
-                  // 装饰分隔线
-                  Container(
-                    margin: const EdgeInsets.symmetric(vertical: 12),
-                    width: 60,
-                    height: 3,
-                    decoration: BoxDecoration(
-                      color: Colors.blue.shade400,
-                      borderRadius: BorderRadius.circular(1.5),
-                    ),
+                // 装饰分隔线
+                Container(
+                  margin: const EdgeInsets.symmetric(vertical: 12),
+                  width: 60,
+                  height: 3,
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade400,
+                    borderRadius: BorderRadius.circular(1.5),
                   ),
+                ),
 
-                  // 职位
-                  Text(
-                    card.title,
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey.shade600,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    textAlign: TextAlign.center,
+                // 职位
+                Text(
+                  card.title,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey.shade600,
+                    fontWeight: FontWeight.w500,
                   ),
+                  textAlign: TextAlign.center,
+                ),
 
-                  const SizedBox(height: 24),
+                const SizedBox(height: 24),
 
-                  // 业务描述标题
-                  Container(
-                    width: double.infinity,
-                    alignment: Alignment.centerLeft,
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 4,
-                          height: 16,
-                          color: Colors.blue.shade400,
-                          margin: const EdgeInsets.only(right: 8),
+                // 业务描述标题
+                Container(
+                  width: double.infinity,
+                  alignment: Alignment.centerLeft,
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 4,
+                        height: 16,
+                        color: Colors.blue.shade400,
+                        margin: const EdgeInsets.only(right: 8),
+                      ),
+                      Text(
+                        'Business Description:',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey.shade800,
                         ),
-                        Text(
-                          'Business Description:',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey.shade800,
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
+                ),
 
-                  const SizedBox(height: 10),
+                const SizedBox(height: 10),
 
-                  // 业务描述内容
-                  Text(
-                    '${card.company} specializes in providing premium ${card.category.toLowerCase()} services with over 10 years of industry experience. We focus on customer satisfaction and professional service.',
-                    style: TextStyle(
-                      fontSize: 14,
-                      height: 1.5,
-                      color: Colors.grey.shade700,
-                    ),
+                // 业务描述内容
+                Text(
+                  '${card.company} specializes in providing premium ${card.category.toLowerCase()} services with over 10 years of industry experience. We focus on customer satisfaction and professional service.',
+                  style: TextStyle(
+                    fontSize: 14,
+                    height: 1.5,
+                    color: Colors.grey.shade700,
                   ),
+                ),
 
-                  const SizedBox(height: 24),
+                const SizedBox(height: 24),
 
-                  // 服务项目标题
-                  Container(
-                    width: double.infinity,
-                    alignment: Alignment.centerLeft,
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 4,
-                          height: 16,
-                          color: Colors.blue.shade400,
-                          margin: const EdgeInsets.only(right: 8),
+                // 服务项目标题
+                Container(
+                  width: double.infinity,
+                  alignment: Alignment.centerLeft,
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 4,
+                        height: 16,
+                        color: Colors.blue.shade400,
+                        margin: const EdgeInsets.only(right: 8),
+                      ),
+                      Text(
+                        'Our Services:',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey.shade800,
                         ),
-                        Text(
-                          'Our Services:',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey.shade800,
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
+                ),
 
-                  const SizedBox(height: 10),
+                const SizedBox(height: 10),
 
-                  // 服务项目列表
-                  _buildServiceItem('Professional Consulting'),
-                  _buildServiceItem('Premium Products'),
-                  _buildServiceItem('After-sales Support'),
-                  _buildServiceItem('Quality Assurance'),
+                // 服务项目列表
+                _buildServiceItem('Professional Consulting'),
+                _buildServiceItem('Premium Products'),
+                _buildServiceItem('After-sales Support'),
+                _buildServiceItem('Quality Assurance'),
 
-                  const SizedBox(height: 20),
+                const SizedBox(height: 20),
 
-                  // 底部提示文字
-                  Container(
-                    padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.touch_app,
-                          size: 14,
+                // 底部提示文字
+                Container(
+                  padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.touch_app,
+                        size: 14,
+                        color: Colors.grey.shade600,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Tap to view contact details',
+                        style: TextStyle(
+                          fontSize: 12,
                           color: Colors.grey.shade600,
+                          fontStyle: FontStyle.italic,
                         ),
-                        const SizedBox(width: 4),
-                        Text(
-                          'Tap to view contact details',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey.shade600,
-                            fontStyle: FontStyle.italic,
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ],
@@ -734,173 +712,168 @@ class HolderScreen extends ConsumerWidget {
           ),
 
           // 主要内容
-          Expanded(
-            child: SingleChildScrollView(
-              // 修改点: 添加physics属性以防止过渡动画中的滚动问题
-              physics: const ClampingScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 联系人信息区块
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade50,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: Colors.grey.shade200,
-                        width: 1,
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 联系人信息区块
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: Colors.grey.shade200,
+                      width: 1,
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      // 联系人名称
+                      Text(
+                        card.name,
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey.shade800,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      Text(
+                        card.title,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey.shade600,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                // 联系方式标题
+                Row(
+                  children: [
+                    Container(
+                      width: 4,
+                      height: 16,
+                      color: Colors.blue.shade400,
+                      margin: const EdgeInsets.only(right: 8),
+                    ),
+                    Text(
+                      'HOW TO REACH US',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey.shade700,
+                        letterSpacing: 1,
                       ),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
+                  ],
+                ),
+
+                const SizedBox(height: 16),
+
+                // 联系方式
+                _buildContactItem(Icons.phone, card.phone),
+                const Divider(height: 1, indent: 60, endIndent: 0),
+                _buildContactItem(Icons.fax, card.fax),
+                const Divider(height: 1, indent: 60, endIndent: 0),
+                _buildContactItem(Icons.location_on, card.address, multiLine: true),
+                const Divider(height: 1, indent: 60, endIndent: 0),
+                _buildContactItem(Icons.email, card.email),
+
+                const SizedBox(height: 24),
+
+                // 业务时间
+                Row(
+                  children: [
+                    Container(
+                      width: 4,
+                      height: 16,
+                      color: Colors.blue.shade400,
+                      margin: const EdgeInsets.only(right: 8),
+                    ),
+                    Text(
+                      'BUSINESS HOURS',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey.shade700,
+                        letterSpacing: 1,
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 12),
+
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: Colors.grey.shade200,
+                      width: 1,
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildBusinessHours('Mon - Fri', '9:00 AM - 6:00 PM'),
+                      const SizedBox(height: 6),
+                      _buildBusinessHours('Saturday', '10:00 AM - 4:00 PM'),
+                      const SizedBox(height: 6),
+                      _buildBusinessHours('Sunday', 'Closed'),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                // 底部提示文字
+                Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        // 联系人名称
-                        Text(
-                          card.name,
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey.shade800,
-                          ),
-                          textAlign: TextAlign.center,
+                        Icon(
+                          Icons.touch_app,
+                          size: 14,
+                          color: Colors.grey.shade600,
                         ),
+                        const SizedBox(width: 4),
                         Text(
-                          card.title,
+                          'Tap to see business information',
                           style: TextStyle(
-                            fontSize: 14,
+                            fontSize: 12,
                             color: Colors.grey.shade600,
+                            fontStyle: FontStyle.italic,
                           ),
-                          textAlign: TextAlign.center,
                         ),
                       ],
                     ),
                   ),
-
-                  const SizedBox(height: 20),
-
-                  // 联系方式标题
-                  Row(
-                    children: [
-                      Container(
-                        width: 4,
-                        height: 16,
-                        color: Colors.blue.shade400,
-                        margin: const EdgeInsets.only(right: 8),
-                      ),
-                      Text(
-                        'HOW TO REACH US',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey.shade700,
-                          letterSpacing: 1,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // 联系方式
-                  _buildContactItem(Icons.phone, card.phone),
-                  const Divider(height: 1, indent: 60, endIndent: 0),
-                  _buildContactItem(Icons.fax, card.fax),
-                  const Divider(height: 1, indent: 60, endIndent: 0),
-                  _buildContactItem(Icons.location_on, card.address, multiLine: true),
-                  const Divider(height: 1, indent: 60, endIndent: 0),
-                  _buildContactItem(Icons.email, card.email),
-
-                  const SizedBox(height: 24),
-
-                  // 业务时间
-                  Row(
-                    children: [
-                      Container(
-                        width: 4,
-                        height: 16,
-                        color: Colors.blue.shade400,
-                        margin: const EdgeInsets.only(right: 8),
-                      ),
-                      Text(
-                        'BUSINESS HOURS',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey.shade700,
-                          letterSpacing: 1,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade50,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: Colors.grey.shade200,
-                        width: 1,
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildBusinessHours('Mon - Fri', '9:00 AM - 6:00 PM'),
-                        const SizedBox(height: 6),
-                        _buildBusinessHours('Saturday', '10:00 AM - 4:00 PM'),
-                        const SizedBox(height: 6),
-                        _buildBusinessHours('Sunday', 'Closed'),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // 底部提示文字
-                  Center(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.touch_app,
-                            size: 14,
-                            color: Colors.grey.shade600,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Tap to see business information',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey.shade600,
-                              fontStyle: FontStyle.italic,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ],
       ),
     );
   }
-
 
   Widget _buildBusinessHours(String day, String hours) {
     return Row(

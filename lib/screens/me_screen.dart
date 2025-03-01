@@ -14,7 +14,7 @@ class _MeScreenState extends State<MeScreen> with SingleTickerProviderStateMixin
   Alignment _dragAlignment = Alignment.center;
 
   // 个人信息
-  final Map<String, String> userInfo = {
+  Map<String, String> userInfo = {
     'companyName': 'CHEN AUTO GROUP',
     'name': 'Michael Chen',
     'title': 'Sales Representative',
@@ -23,7 +23,7 @@ class _MeScreenState extends State<MeScreen> with SingleTickerProviderStateMixin
   };
 
   // 服务列表
-  final List<String> services = [
+  List<String> services = [
     'Professional Consulting',
     'Premium Products',
     'After-sales Support',
@@ -102,6 +102,317 @@ class _MeScreenState extends State<MeScreen> with SingleTickerProviderStateMixin
     return Alignment(newX, newY);
   }
 
+  // 显示详细信息对话框
+  void _showDetailsDialog() {
+    // 计算哪些服务需要额外显示
+    final List<String> extraServices = services.length > 4
+        ? services.sublist(4)
+        : [];
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Contact Details'),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildDetailItem('Company', userInfo['companyName']!),
+              _buildDetailItem('Name', userInfo['name']!),
+              _buildDetailItem('Title', userInfo['title']!),
+              _buildDetailItem('Description', userInfo['description']!),
+              const SizedBox(height: 10),
+              const Text('Services:', style: TextStyle(fontWeight: FontWeight.bold)),
+              ...services.map((service) => Padding(
+                padding: const EdgeInsets.only(left: 8.0, top: 4.0),
+                child: Row(
+                  children: [
+                    Icon(Icons.check_circle, color: Colors.green[600], size: 16),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text(service)),
+                  ],
+                ),
+              )),
+              if (extraServices.isNotEmpty) ...[
+                const SizedBox(height: 10),
+                const Text('Additional Services:', style: TextStyle(fontWeight: FontWeight.bold)),
+                ...extraServices.map((service) => Padding(
+                  padding: const EdgeInsets.only(left: 8.0, top: 4.0),
+                  child: Row(
+                    children: [
+                      Icon(Icons.check_circle, color: Colors.green[600], size: 16),
+                      const SizedBox(width: 8),
+                      Expanded(child: Text(service)),
+                    ],
+                  ),
+                )),
+              ],
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 详细信息条目
+  Widget _buildDetailItem(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 4),
+          Text(value),
+        ],
+      ),
+    );
+  }
+
+  // 显示编辑表单
+  void _showEditForm() {
+    // 创建临时变量来保存编辑值
+    final Map<String, String> editedInfo = Map.from(userInfo);
+    final List<String> editedServices = List.from(services);
+
+    // 创建控制器
+    final companyNameController = TextEditingController(text: editedInfo['companyName']);
+    final nameController = TextEditingController(text: editedInfo['name']);
+    final titleController = TextEditingController(text: editedInfo['title']);
+    final descriptionController = TextEditingController(text: editedInfo['description']);
+
+    // 服务项控制器列表 - 为每个服务创建一个控制器
+    final List<TextEditingController> serviceControllers = editedServices
+        .map((service) => TextEditingController(text: service))
+        .toList();
+
+    // 添加一个空的服务项控制器，用于添加新服务
+    final newServiceController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+          child: Container(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.8,
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                children: [
+                  const Text(
+                    'Edit Profile Information',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // 公司名称
+                          _buildFormField('Company Name', companyNameController),
+                          const SizedBox(height: 16),
+
+                          // 头像和姓名、职位
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // 头像
+                              Column(
+                                children: [
+                                  CircleAvatar(
+                                    radius: 30,
+                                    backgroundImage: NetworkImage(editedInfo['avatar']!),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  TextButton(
+                                    onPressed: () {
+                                      // 这里添加选择头像的功能
+                                    },
+                                    child: const Text('Change Avatar'),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(width: 16),
+                              // 姓名和职位
+                              Expanded(
+                                child: Column(
+                                  children: [
+                                    _buildFormField('Name', nameController),
+                                    const SizedBox(height: 16),
+                                    _buildFormField('Title', titleController),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+
+                          // 业务描述
+                          _buildFormField('Business Description', descriptionController, maxLines: 3),
+                          const SizedBox(height: 16),
+
+                          // 服务列表
+                          const Text(
+                            'Services/Skills:',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 8),
+
+                          // 使用单一StatefulBuilder包裹整个服务列表区域
+                          StatefulBuilder(
+                            builder: (context, setState) {
+                              return Column(
+                                children: [
+                                  // 现有服务项列表
+                                  ...List.generate(serviceControllers.length, (index) {
+                                    return Padding(
+                                      padding: const EdgeInsets.only(bottom: 8.0),
+                                      child: Row(
+                                        children: [
+                                          Expanded(
+                                            child: TextField(
+                                              controller: serviceControllers[index],
+                                              decoration: const InputDecoration(
+                                                border: OutlineInputBorder(),
+                                                contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                              ),
+                                            ),
+                                          ),
+                                          IconButton(
+                                            icon: const Icon(Icons.delete, color: Colors.red),
+                                            onPressed: () {
+                                              setState(() {
+                                                serviceControllers.removeAt(index);
+                                                editedServices.removeAt(index);
+                                              });
+                                            },
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  }),
+
+                                  // 添加新服务项
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 8.0),
+                                    child: Row(
+                                      children: [
+                                        Expanded(
+                                          child: TextField(
+                                            controller: newServiceController,
+                                            decoration: const InputDecoration(
+                                              border: OutlineInputBorder(),
+                                              hintText: 'Add new service',
+                                              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                            ),
+                                            onSubmitted: (value) {
+                                              if (value.isNotEmpty) {
+                                                setState(() {
+                                                  editedServices.add(value);
+                                                  serviceControllers.add(TextEditingController(text: value));
+                                                  newServiceController.clear();
+                                                });
+                                              }
+                                            },
+                                          ),
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(Icons.add, color: Colors.green),
+                                          onPressed: () {
+                                            if (newServiceController.text.isNotEmpty) {
+                                              setState(() {
+                                                editedServices.add(newServiceController.text);
+                                                serviceControllers.add(TextEditingController(text: newServiceController.text));
+                                                newServiceController.clear();
+                                              });
+                                            }
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: const Text('Cancel'),
+                      ),
+                      ElevatedButton(
+                        onPressed: () {
+                          // 更新信息
+                          setState(() {
+                            userInfo['companyName'] = companyNameController.text;
+                            userInfo['name'] = nameController.text;
+                            userInfo['title'] = titleController.text;
+                            userInfo['description'] = descriptionController.text;
+
+                            // 更新服务列表
+                            services = serviceControllers
+                                .map((controller) => controller.text)
+                                .where((text) => text.isNotEmpty)
+                                .toList();
+                          });
+                          Navigator.of(context).pop();
+                        },
+                        child: const Text('Save'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // 表单字段
+  Widget _buildFormField(String label, TextEditingController controller, {int maxLines = 1}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: controller,
+          maxLines: maxLines,
+          decoration: const InputDecoration(
+            border: OutlineInputBorder(),
+            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
@@ -109,6 +420,12 @@ class _MeScreenState extends State<MeScreen> with SingleTickerProviderStateMixin
     final cardWidth = size.width * 0.67;
 
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 1,
+        title: const Text('My Profile', style: TextStyle(color: Colors.black87)),
+        centerTitle: true,
+      ),
       body: Container(
         color: Colors.grey[50],
         child: SafeArea(
@@ -259,33 +576,36 @@ class _MeScreenState extends State<MeScreen> with SingleTickerProviderStateMixin
 
                                     const SizedBox(height: 2), // 减少垂直间距
 
-                                    // 服务列表
-                                    ...services.map((service) => _buildServiceItem(service)),
+                                    // 服务列表 - 只显示前4个
+                                    ...services.take(4).map((service) => _buildServiceItem(service)),
 
                                     const SizedBox(height: 4), // 减少垂直间距
 
-                                    // 查看联系方式提示
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                                      margin: const EdgeInsets.only(bottom: 4), // 减少下边距
-                                      decoration: BoxDecoration(
-                                        color: Colors.grey[100],
-                                        borderRadius: BorderRadius.circular(20),
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Icon(Icons.touch_app, size: 12, color: Colors.grey[600]),
-                                          const SizedBox(width: 6),
-                                          Text(
-                                            'Tap to view contact details',
-                                            style: TextStyle(
-                                              color: Colors.grey[600],
-                                              fontSize: 10,
-                                              fontStyle: FontStyle.italic,
+                                    // 查看联系方式提示 - 添加点击事件
+                                    GestureDetector(
+                                      onTap: _showDetailsDialog,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                        margin: const EdgeInsets.only(bottom: 4), // 减少下边距
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey[100],
+                                          borderRadius: BorderRadius.circular(20),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(Icons.touch_app, size: 12, color: Colors.grey[600]),
+                                            const SizedBox(width: 6),
+                                            Text(
+                                              'Tap to view contact details',
+                                              style: TextStyle(
+                                                color: Colors.grey[600],
+                                                fontSize: 10,
+                                                fontStyle: FontStyle.italic,
+                                              ),
                                             ),
-                                          ),
-                                        ],
+                                          ],
+                                        ),
                                       ),
                                     ),
                                   ],
@@ -325,10 +645,10 @@ class _MeScreenState extends State<MeScreen> with SingleTickerProviderStateMixin
                                       onPressed: () {},
                                     ),
                                     _buildActionButton(
-                                      icon: Icons.close,
-                                      label: 'Close',
-                                      color: Colors.grey[700]!,
-                                      onPressed: () {},
+                                      icon: Icons.edit,
+                                      label: 'Edit',
+                                      color: Colors.blue[700]!,
+                                      onPressed: _showEditForm,
                                     ),
                                   ],
                                 ),

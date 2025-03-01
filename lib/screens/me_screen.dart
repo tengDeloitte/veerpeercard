@@ -30,6 +30,10 @@ class _MeScreenState extends State<MeScreen> with SingleTickerProviderStateMixin
     'Quality Assurance',
   ];
 
+  // 文本内容长度限制
+  final int _descriptionCharLimit = 380;
+  final int _serviceNameCharLimit = 25;
+
   @override
   void initState() {
     super.initState();
@@ -100,6 +104,13 @@ class _MeScreenState extends State<MeScreen> with SingleTickerProviderStateMixin
     newY = newY.clamp(-maxVerticalAlignment, maxVerticalAlignment);
 
     return Alignment(newX, newY);
+  }
+
+  // 对长文本进行截断并添加省略号
+  String _truncateWithEllipsis(String text, int maxLength) {
+    return text.length <= maxLength
+        ? text
+        : '${text.substring(0, maxLength)}...';
   }
 
   // 显示详细信息对话框
@@ -223,7 +234,7 @@ class _MeScreenState extends State<MeScreen> with SingleTickerProviderStateMixin
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           // 公司名称
-                          _buildFormField('Company Name', companyNameController),
+                          _buildFormField('Business Name/Company Name', companyNameController),
                           const SizedBox(height: 16),
 
                           // 头像和姓名、职位
@@ -262,7 +273,7 @@ class _MeScreenState extends State<MeScreen> with SingleTickerProviderStateMixin
                           const SizedBox(height: 16),
 
                           // 业务描述
-                          _buildFormField('Business Description', descriptionController, maxLines: 3),
+                          _buildFormField('Business/Company Description', descriptionController, maxLines: 10),
                           const SizedBox(height: 16),
 
                           // 服务列表
@@ -420,12 +431,6 @@ class _MeScreenState extends State<MeScreen> with SingleTickerProviderStateMixin
     final cardWidth = size.width * 0.67;
 
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 1,
-        title: const Text('My Profile', style: TextStyle(color: Colors.black87)),
-        centerTitle: true,
-      ),
       body: Container(
         color: Colors.grey[50],
         child: SafeArea(
@@ -555,11 +560,11 @@ class _MeScreenState extends State<MeScreen> with SingleTickerProviderStateMixin
 
                                     const SizedBox(height: 2), // 减少垂直间距
 
-                                    // 业务描述内容
+                                    // 业务描述内容 - 使用截断的文本
                                     Padding(
                                       padding: const EdgeInsets.symmetric(horizontal: 12), // 减少水平内边距
                                       child: Text(
-                                        userInfo['description']!,
+                                        _truncateWithEllipsis(userInfo['description']!, _descriptionCharLimit),
                                         style: TextStyle(
                                           color: Colors.grey[700],
                                           fontSize: 12,
@@ -576,8 +581,10 @@ class _MeScreenState extends State<MeScreen> with SingleTickerProviderStateMixin
 
                                     const SizedBox(height: 2), // 减少垂直间距
 
-                                    // 服务列表 - 只显示前4个
-                                    ...services.take(4).map((service) => _buildServiceItem(service)),
+                                    // 服务列表 - 只显示前4个，并且每个服务项使用截断的文本
+                                    ...services.take(4).map((service) =>
+                                        _buildServiceItem(_truncateWithEllipsis(service, _serviceNameCharLimit))
+                                    ),
 
                                     const SizedBox(height: 4), // 减少垂直间距
 
@@ -585,23 +592,24 @@ class _MeScreenState extends State<MeScreen> with SingleTickerProviderStateMixin
                                     GestureDetector(
                                       onTap: _showDetailsDialog,
                                       child: Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                                        margin: const EdgeInsets.only(bottom: 4), // 减少下边距
+                                        width: double.infinity,
+                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                        margin: const EdgeInsets.only(top: 2, bottom: 4), // 调整边距
                                         decoration: BoxDecoration(
-                                          color: Colors.grey[100],
+                                          color: Colors.blue.withOpacity(0.1),
                                           borderRadius: BorderRadius.circular(20),
                                         ),
                                         child: Row(
-                                          mainAxisSize: MainAxisSize.min,
+                                          mainAxisAlignment: MainAxisAlignment.center,
                                           children: [
-                                            Icon(Icons.touch_app, size: 12, color: Colors.grey[600]),
+                                            Icon(Icons.touch_app, size: 14, color: Colors.blue[600]),
                                             const SizedBox(width: 6),
                                             Text(
-                                              'Tap to view contact details',
+                                              'Tap to view full details',
                                               style: TextStyle(
-                                                color: Colors.grey[600],
-                                                fontSize: 10,
-                                                fontStyle: FontStyle.italic,
+                                                color: Colors.blue[600],
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w500,
                                               ),
                                             ),
                                           ],
@@ -703,11 +711,15 @@ class _MeScreenState extends State<MeScreen> with SingleTickerProviderStateMixin
             size: 14,
           ),
           const SizedBox(width: 6),
-          Text(
-            service,
-            style: TextStyle(
-              color: Colors.grey[700],
-              fontSize: 12,
+          Expanded(
+            child: Text(
+              service,
+              style: TextStyle(
+                color: Colors.grey[700],
+                fontSize: 12,
+              ),
+              overflow: TextOverflow.ellipsis, // 确保文本超出时显示省略号
+              maxLines: 1, // 限制为单行
             ),
           ),
         ],

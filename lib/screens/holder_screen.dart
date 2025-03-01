@@ -103,14 +103,14 @@ class HolderScreen extends ConsumerWidget {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        title: Text(
-          'Business Cards',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            letterSpacing: 0.5,
-            color: Colors.black,
-          ),
-        ),
+        // title: Text(
+        //   'Business Cards',
+        //   style: TextStyle(
+        //     fontWeight: FontWeight.bold,
+        //     letterSpacing: 0.5,
+        //     color: Colors.black,
+        //   ),
+        // ),
         iconTheme: IconThemeData(color: Colors.black),
         actions: [
           IconButton(

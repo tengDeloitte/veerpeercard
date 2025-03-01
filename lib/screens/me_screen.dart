@@ -1,6 +1,5 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
+import 'package:flutter/physics.dart';
 
 class MeScreen extends StatefulWidget {
   const MeScreen({super.key});
@@ -9,282 +8,416 @@ class MeScreen extends StatefulWidget {
   State<MeScreen> createState() => _MeScreenState();
 }
 
-class _MeScreenState extends State<MeScreen> with TickerProviderStateMixin {
-  // ========== 1. 惯性漂浮用到的位移 & 速度 ==========
-  double _posX = 0; // 当前卡片相对于“初始中心”的 X 偏移
-  double _posY = 0; // 当前卡片相对于“初始中心”的 Y 偏移
-  double _velX = 0; // X 平移速度 (像素/帧)
-  double _velY = 0; // Y 平移速度 (像素/帧)
+class _MeScreenState extends State<MeScreen> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<Alignment> _animation;
+  Alignment _dragAlignment = Alignment.center;
 
-  // 你可以调大/调小下面这两个系数来控制“拖拽 -> 速度” 和 “速度衰减”
-  final double _dragToVelocityFactor = 0.3; // 拖拽距离 -> 惯性速度的映射
-  final double _friction = 0.98; // 摩擦系数(越接近1衰减越慢)
+  // 个人信息
+  final Map<String, String> userInfo = {
+    'companyName': 'CHEN AUTO GROUP',
+    'name': 'Michael Chen',
+    'title': 'Sales Representative',
+    'avatar': 'https://via.placeholder.com/150',
+    'description': 'Chen Auto Group specializes in providing premium auto sales services with over 10 years of industry experience. We focus on customer satisfaction and professional service.',
+  };
 
-  // ========== 2. 轻微倾斜动画相关 ==========
-  late AnimationController _tiltController;
-  late Animation<double> _tiltAnimation;
-  // 倾斜到多少度（弧度），此处 10° = π/18
-  final double _maxTiltRadians = math.pi / 18;
-
-  // ========== 3. 双击翻转动画相关 ==========
-  late AnimationController _flipController;
-  late Animation<double> _flipAnimation;
-  bool _isFlipped = false; // 记录当前是否已翻面
-
-  // ========== 卡片基本信息 ==========
-  final double cardWidth = 200;
-  final double cardHeight = 120;
-
-  // ========== 动画驱动 (Ticker) - 处理惯性漂移 ==========
-  late final Ticker _ticker;
-
-  // ========== 父容器大小，用于边界检测 ==========
-  double? _screenWidth;
-  double? _screenHeight;
-
-  // 手势按下时计算卡片中心，辅助拖拽
-  Offset _cardCenter = Offset.zero;
+  // 服务列表
+  final List<String> services = [
+    'Professional Consulting',
+    'Premium Products',
+    'After-sales Support',
+    'Quality Assurance',
+  ];
 
   @override
   void initState() {
     super.initState();
-
-    // ========== A) 创建 Ticker 用于惯性漂浮 ==========
-    _ticker = createTicker(_onTick);
-    _ticker.start();
-
-    // ========== B) 轻微倾斜动画 ==========
-    _tiltController = AnimationController(
+    _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 150),
-    );
-    // 从 0 到 _maxTiltRadians
-    _tiltAnimation = Tween<double>(begin: 0, end: _maxTiltRadians).animate(
-      CurvedAnimation(parent: _tiltController, curve: Curves.easeOut),
+      duration: const Duration(milliseconds: 500),
     );
 
-    // ========== C) 双击翻转动画 ==========
-    _flipController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 400),
-    );
-    // 从 0 到 π（180°）
-    _flipAnimation = Tween<double>(begin: 0, end: math.pi).animate(
-      CurvedAnimation(parent: _flipController, curve: Curves.easeInOut),
-    );
+    _controller.addListener(() {
+      setState(() {
+        _dragAlignment = _animation.value;
+      });
+    });
   }
 
   @override
   void dispose() {
-    _ticker.dispose();
-    _tiltController.dispose();
-    _flipController.dispose();
+    _controller.dispose();
     super.dispose();
   }
 
-  // 每帧都执行 - 让卡片带着速度漂浮，并进行边界检测
-  void _onTick(Duration elapsed) {
-    if (!mounted) return;
+  void _runAnimation(Offset pixelsPerSecond, Size size) {
+    // 计算速度
+    final unitsPerSecondX = pixelsPerSecond.dx / size.width;
+    final unitsPerSecondY = pixelsPerSecond.dy / size.height;
+    final unitsPerSecond = Offset(unitsPerSecondX, unitsPerSecondY);
+    final unitVelocity = unitsPerSecond.distance;
 
-    setState(() {
-      // 1) 累加平移
-      _posX += _velX;
-      _posY += _velY;
+    // 创建一个弹簧模拟
+    const spring = SpringDescription(
+      mass: 30,
+      stiffness: 1,
+      damping: 1,
+    );
 
-      // 2) 速度衰减
-      _velX *= _friction;
-      _velY *= _friction;
+    final simulation = SpringSimulation(spring, 0, 1, -unitVelocity);
 
-      // 3) 边界检测
-      _clampPosition();
-    });
+    // 动画从当前位置到随机位置，但限制在安全区域内
+    final Alignment endAlignment = _getSafeRandomAlignment(size);
+
+    _animation = _controller.drive(
+      AlignmentTween(
+        begin: _dragAlignment,
+        end: endAlignment,
+      ),
+    );
+
+    _controller.reset();
+    _controller.forward();
   }
 
-  // 确保卡片不会跑到屏幕外
-  void _clampPosition() {
-    if (_screenWidth == null || _screenHeight == null) return;
+  // 获取随机对齐位置，但保持在屏幕安全范围内
+  Alignment _getSafeRandomAlignment(Size size) {
+    // 使用与屏幕大小相关的边界计算
+    final cardWidth = size.width * 0.65;
+    final cardHeight = size.height * 0.55; // 估计卡片高度
 
-    final centerX = (_screenWidth! - cardWidth) / 2;
-    final centerY = (_screenHeight! - cardHeight) / 2;
+    // 允许卡片移动到接近屏幕边缘
+    final maxHorizontalAlignment = 0.9 - (cardWidth / size.width) / 2;
+    final maxVerticalAlignment = 0.9 - (cardHeight / size.height) / 2;
 
-    final minX = -centerX;
-    final maxX = (_screenWidth! - cardWidth) - centerX;
+    // 获取带有随机偏移的新位置
+    double newX = _dragAlignment.x + (_dragAlignment.x.abs() < 0.4 ? 0.4 : -0.4);
+    double newY = _dragAlignment.y + (_dragAlignment.y.abs() < 0.4 ? 0.4 : -0.4);
 
-    final minY = -centerY;
-    final maxY = (_screenHeight! - cardHeight) - centerY;
+    // 确保新位置在安全区域内
+    newX = newX.clamp(-maxHorizontalAlignment, maxHorizontalAlignment);
+    newY = newY.clamp(-maxVerticalAlignment, maxVerticalAlignment);
 
-    if (_posX < minX) {
-      _posX = minX;
-      _velX = 0;
-    } else if (_posX > maxX) {
-      _posX = maxX;
-      _velX = 0;
-    }
-
-    if (_posY < minY) {
-      _posY = minY;
-      _velY = 0;
-    } else if (_posY > maxY) {
-      _posY = maxY;
-      _velY = 0;
-    }
-  }
-
-  // ========== 手势事件：拖拽 ==========
-  void _onPanStart(DragStartDetails details) {
-    // 计算卡片在屏幕中的绝对坐标(左上角)，转成中心
-    final box = context.findRenderObject() as RenderBox?;
-    if (box != null) {
-      final offset = box.localToGlobal(Offset.zero);
-      _cardCenter = Offset(
-        offset.dx + cardWidth / 2,
-        offset.dy + cardHeight / 2,
-      );
-    }
-  }
-
-  void _onPanUpdate(DragUpdateDetails details) {
-    setState(() {
-      // 拖拽增量
-      final delta = details.delta;
-
-      // 将拖拽距离映射到速度
-      _velX = delta.dx * _dragToVelocityFactor;
-      _velY = delta.dy * _dragToVelocityFactor;
-
-      // 为了让卡片与手指更贴合，也可以立即更新位置
-      _posX += delta.dx * 0.2;
-      _posY += delta.dy * 0.2;
-    });
-  }
-
-  void _onPanEnd(DragEndDetails details) {
-    // 不清零速度，卡片继续惯性飘
-  }
-
-  // ========== 手势事件：轻微倾斜与翻转 ==========
-  // 按下时倾斜
-  void _onTapDown(TapDownDetails details) {
-    _tiltController.forward();
-  }
-
-  // 松开时回正
-  void _onTapUp(TapUpDetails details) {
-    _tiltController.reverse();
-  }
-
-  void _onTapCancel() {
-    _tiltController.reverse();
-  }
-
-  // 双击翻转
-  void _onDoubleTap() {
-    if (_isFlipped) {
-      _flipController.reverse();
-    } else {
-      _flipController.forward();
-    }
-    _isFlipped = !_isFlipped;
+    return Alignment(newX, newY);
   }
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    // 保持名片原始尺寸
+    final cardWidth = size.width * 0.67;
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Inertia + Slight Tilt + DoubleTap Flip'),
-      ),
-      body: LayoutBuilder(
-        builder: (ctx, constraints) {
-          _screenWidth = constraints.maxWidth;
-          _screenHeight = constraints.maxHeight;
-
-          return Stack(
+      body: Container(
+        color: Colors.grey[50],
+        child: SafeArea(
+          child: Stack(
             children: [
-              // 使用 Positioned 将卡片定位到 “初始中心 + 偏移”
-              Positioned(
-                left: (constraints.maxWidth - cardWidth) / 2 + _posX,
-                top: (constraints.maxHeight - cardHeight) / 2 + _posY,
-                child: GestureDetector(
-                  // 拖拽相关
-                  onPanStart: _onPanStart,
-                  onPanUpdate: _onPanUpdate,
-                  onPanEnd: _onPanEnd,
+              // 可拖动卡片区域 - 减少顶部和底部的边距
+              Positioned.fill(
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    // 计算可移动的最大边界值 - 增加可移动范围
+                    final cardHeight = constraints.maxHeight * 0.55;
+                    final maxHorizontalAlignment = 0.9 - (cardWidth / constraints.maxWidth) / 2;
+                    final maxVerticalAlignment = 0.9 - (cardHeight / constraints.maxHeight) / 2;
 
-                  // 轻微倾斜相关
-                  onTapDown: _onTapDown,
-                  onTapUp: _onTapUp,
-                  onTapCancel: _onTapCancel,
+                    return GestureDetector(
+                      onPanDown: (details) {
+                        _controller.stop();
+                      },
+                      onPanUpdate: (details) {
+                        setState(() {
+                          // 计算新位置
+                          double newX = _dragAlignment.x + 2 * details.delta.dx / constraints.maxWidth;
+                          double newY = _dragAlignment.y + 2 * details.delta.dy / constraints.maxHeight;
 
-                  // 翻转相关
-                  onDoubleTap: _onDoubleTap,
+                          // 限制在安全区域内，但允许更大范围
+                          newX = newX.clamp(-maxHorizontalAlignment, maxHorizontalAlignment);
+                          newY = newY.clamp(-maxVerticalAlignment, maxVerticalAlignment);
 
-                  child: AnimatedBuilder(
-                    // 同时监听倾斜动画 & 翻转动画
-                    animation:
-                        Listenable.merge([_tiltController, _flipController]),
-                    builder: (context, child) {
-                      final tilt = _tiltAnimation.value; // 0 ~ _maxTiltRadians
-                      final flip = _flipAnimation.value; // 0 ~ π
-
-                      // 先做轻微倾斜(绕X轴)，再做翻转(绕Y轴)
-                      final transform = Matrix4.identity()
-                        ..setEntry(3, 2, 0.001)
-                        ..rotateX(tilt)
-                        ..rotateY(flip);
-
-                      return Transform(
-                        alignment: Alignment.center,
-                        transform: transform,
+                          _dragAlignment = Alignment(newX, newY);
+                        });
+                      },
+                      onPanEnd: (details) {
+                        _runAnimation(details.velocity.pixelsPerSecond, Size(constraints.maxWidth, constraints.maxHeight));
+                      },
+                      child: Align(
+                        alignment: _dragAlignment,
                         child: Container(
                           width: cardWidth,
-                          height: cardHeight,
-                          alignment: Alignment.center,
+                          // 不设置固定高度，让内容决定高度
                           decoration: BoxDecoration(
-                            color: Colors.blueAccent,
+                            color: Colors.white,
                             borderRadius: BorderRadius.circular(16),
-                            boxShadow: const [
+                            boxShadow: [
                               BoxShadow(
-                                color: Colors.black26,
-                                blurRadius: 8,
-                                offset: Offset(0, 4),
+                                color: Colors.grey.withOpacity(0.3),
+                                spreadRadius: 3,
+                                blurRadius: 7,
+                                offset: const Offset(0, 3),
                               ),
                             ],
                           ),
-                          child: _buildCardContent(),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min, // 关键：让Column根据内容调整大小
+                            children: [
+                              // 卡片内容区域 - 减少内部padding
+                              Padding(
+                                padding: const EdgeInsets.all(8), // 减少内边距
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    // 公司名称
+                                    Container(
+                                      margin: const EdgeInsets.only(top: 8, bottom: 12),
+                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                                      decoration: BoxDecoration(
+                                        border: Border.all(color: Colors.blue, width: 1),
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: Text(
+                                        userInfo['companyName']!,
+                                        style: const TextStyle(
+                                          color: Colors.blue,
+                                          fontWeight: FontWeight.w500,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                    ),
+
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8), // 减少水平内边距
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          // 头像
+                                          CircleAvatar(
+                                            radius: 25,
+                                            backgroundImage: NetworkImage(userInfo['avatar']!),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          // 姓名、职位和装饰线在同一列
+                                          Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                userInfo['name']!,
+                                                style: const TextStyle(
+                                                  color: Colors.black87,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 16,
+                                                ),
+                                              ),
+                                              // 装饰线
+                                              Container(
+                                                margin: const EdgeInsets.symmetric(vertical: 4),
+                                                width: 40,
+                                                height: 3,
+                                                color: Colors.blue,
+                                              ),
+                                              Text(
+                                                userInfo['title']!,
+                                                style: TextStyle(
+                                                  color: Colors.grey[600],
+                                                  fontSize: 12,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+
+                                    const SizedBox(height: 8), // 减少垂直间距
+
+                                    // 业务描述标题
+                                    _buildSectionTitle('Business Description:'),
+
+                                    const SizedBox(height: 2), // 减少垂直间距
+
+                                    // 业务描述内容
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 12), // 减少水平内边距
+                                      child: Text(
+                                        userInfo['description']!,
+                                        style: TextStyle(
+                                          color: Colors.grey[700],
+                                          fontSize: 12,
+                                          height: 1.3, // 减少行高
+                                        ),
+                                        textAlign: TextAlign.left,
+                                      ),
+                                    ),
+
+                                    const SizedBox(height: 6), // 减少垂直间距
+
+                                    // 服务标题
+                                    _buildSectionTitle('Our Services:'),
+
+                                    const SizedBox(height: 2), // 减少垂直间距
+
+                                    // 服务列表
+                                    ...services.map((service) => _buildServiceItem(service)),
+
+                                    const SizedBox(height: 4), // 减少垂直间距
+
+                                    // 查看联系方式提示
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                      margin: const EdgeInsets.only(bottom: 4), // 减少下边距
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey[100],
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(Icons.touch_app, size: 12, color: Colors.grey[600]),
+                                          const SizedBox(width: 6),
+                                          Text(
+                                            'Tap to view contact details',
+                                            style: TextStyle(
+                                              color: Colors.grey[600],
+                                              fontSize: 10,
+                                              fontStyle: FontStyle.italic,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+
+                              // 底部操作按钮
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.symmetric(vertical: 8), // 减少垂直内边距
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[200],
+                                  borderRadius: const BorderRadius.only(
+                                    bottomLeft: Radius.circular(16),
+                                    bottomRight: Radius.circular(16),
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                  children: [
+                                    _buildActionButton(
+                                      icon: Icons.call,
+                                      label: 'Call',
+                                      color: Colors.green[700]!,
+                                      onPressed: () {},
+                                    ),
+                                    _buildActionButton(
+                                      icon: Icons.message,
+                                      label: 'Message',
+                                      color: Colors.orange[700]!,
+                                      onPressed: () {},
+                                    ),
+                                    _buildActionButton(
+                                      icon: Icons.email,
+                                      label: 'Email',
+                                      color: Colors.blue[700]!,
+                                      onPressed: () {},
+                                    ),
+                                    _buildActionButton(
+                                      icon: Icons.close,
+                                      label: 'Close',
+                                      color: Colors.grey[700]!,
+                                      onPressed: () {},
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      );
-                    },
-                  ),
+                      ),
+                    );
+                  },
                 ),
               ),
             ],
-          );
-        },
+          ),
+        ),
       ),
     );
   }
 
-  // 根据翻转动画的数值决定显示正面 / 背面
-  Widget _buildCardContent() {
-    final flipAngle = _flipAnimation.value;
-    final isBack = flipAngle > math.pi / 2;
+  Widget _buildSectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12), // 减少水平内边距
+      child: Row(
+        children: [
+          Container(
+            width: 3,
+            height: 14,
+            color: Colors.blue,
+          ),
+          const SizedBox(width: 6),
+          Text(
+            title,
+            style: const TextStyle(
+              color: Colors.black87,
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-    // 背面
-    if (isBack) {
-      return Transform(
-        transform: Matrix4.rotationY(math.pi),
-        alignment: Alignment.center,
-        child: const Text(
-          'Back Side',
-          style: TextStyle(color: Colors.white, fontSize: 18),
-        ),
-      );
-    } else {
-      // 正面
-      return const Text(
-        'Front Side',
-        style: TextStyle(color: Colors.white, fontSize: 18),
-      );
-    }
+  Widget _buildServiceItem(String service) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 12, right: 12, bottom: 4), // 减少内边距
+      child: Row(
+        children: [
+          Icon(
+            Icons.check_circle,
+            color: Colors.green[600],
+            size: 14,
+          ),
+          const SizedBox(width: 6),
+          Text(
+            service,
+            style: TextStyle(
+              color: Colors.grey[700],
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionButton({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onPressed,
+  }) {
+    return InkWell(
+      onTap: onPressed,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: color, size: 20),
+          const SizedBox(height: 2), // 减少垂直间距
+          Text(
+            label,
+            style: TextStyle(
+              color: color,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

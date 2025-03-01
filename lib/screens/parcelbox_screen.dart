@@ -16,7 +16,7 @@ class ParcelboxScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Parcelbox Screen'),
+        // title: const Text('Parcelbox Screen'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),

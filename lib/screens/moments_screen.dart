@@ -16,7 +16,7 @@ class MomentsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Stories'),
+        // title: const Text('Stories'),
         actions: [
           IconButton(
             icon: const Icon(Icons.search),

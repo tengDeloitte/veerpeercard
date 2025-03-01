@@ -38,7 +38,7 @@ class MessagesScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(showChatScreen ? selectedUser : 'Direct Messages'),
+        // title: Text(showChatScreen ? selectedUser : 'Direct Messages'),
         leading: showChatScreen
             ? IconButton(
           icon: const Icon(Icons.arrow_back),

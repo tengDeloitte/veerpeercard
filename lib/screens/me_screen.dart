@@ -39,7 +39,7 @@ class _MeScreenState extends State<MeScreen> with SingleTickerProviderStateMixin
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 500),
+      duration: const Duration(milliseconds: 1000),
     );
 
     _controller.addListener(() {
@@ -64,7 +64,7 @@ class _MeScreenState extends State<MeScreen> with SingleTickerProviderStateMixin
 
     // 创建一个弹簧模拟
     const spring = SpringDescription(
-      mass: 30,
+      mass: 10,
       stiffness: 1,
       damping: 1,
     );
@@ -253,7 +253,7 @@ class _MeScreenState extends State<MeScreen> with SingleTickerProviderStateMixin
                                     onPressed: () {
                                       // 这里添加选择头像的功能
                                     },
-                                    child: const Text('Change Avatar'),
+                                    child: const Text('Update Avatar'),
                                   ),
                                 ],
                               ),

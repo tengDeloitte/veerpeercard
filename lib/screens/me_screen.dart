@@ -1134,7 +1134,7 @@ class _MeScreenState extends State<MeScreen>
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
     // 保持名片原始尺寸
-    final cardWidth = size.width * 0.67;
+    final cardWidth = MediaQuery.of(context).size.width * 0.76;
 
     return Scaffold(
       body: Container(
@@ -1189,291 +1189,10 @@ class _MeScreenState extends State<MeScreen>
                       },
                       child: Align(
                         alignment: _dragAlignment,
-                        // 在 build 方法中找到卡片的内容区域，大约在这里:
-                        // child: Container(
-                        //   width: cardWidth,
-                        //   height: constraints.maxHeight * 0.7,
-                        //   decoration: BoxDecoration(
-                        //     color: Colors.white,
-                        //     borderRadius: BorderRadius.circular(16),
-                        //     boxShadow: [
-                        //       BoxShadow(
-                        //         color: Colors.grey.withOpacity(0.3),
-                        //         spreadRadius: 3,
-                        //         blurRadius: 7,
-                        //         offset: const Offset(0, 3),
-                        //       ),
-                        //     ],
-                        //   ),
-                        //   child: Column(
-                        //     mainAxisSize: MainAxisSize.min,
-                        //     children: [
-                        //       // 卡片内容区域 - 减少内部padding
-                        //       Expanded(  // 将整个内容区域设置为 Expanded
-                        //         child: Column(
-                        //           children: [
-                        //             // 公司名称
-                        //             Container(
-                        //               margin: const EdgeInsets.only(top: 8, bottom: 12),
-                        //               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                        //               decoration: BoxDecoration(
-                        //                 border: Border.all(color: Colors.blue, width: 1),
-                        //                 borderRadius: BorderRadius.circular(4),
-                        //               ),
-                        //               child: Text(
-                        //                 userInfo['companyName']!,
-                        //                 style: const TextStyle(
-                        //                   color: Colors.blue,
-                        //                   fontWeight: FontWeight.w500,
-                        //                   fontSize: 14,
-                        //                 ),
-                        //               ),
-                        //             ),
-                        //
-                        //             // 姓名和职位
-                        //             Padding(
-                        //               padding: const EdgeInsets.symmetric(horizontal: 8),
-                        //               child: Row(
-                        //                 mainAxisAlignment: MainAxisAlignment.center,
-                        //                 children: [
-                        //                   CircleAvatar(
-                        //                     radius: 25,
-                        //                     backgroundImage: NetworkImage(userInfo['avatar']!),
-                        //                   ),
-                        //                   const SizedBox(width: 12),
-                        //                   Column(
-                        //                     crossAxisAlignment: CrossAxisAlignment.start,
-                        //                     children: [
-                        //                       Text(
-                        //                         userInfo['name']!,
-                        //                         style: const TextStyle(
-                        //                           color: Colors.black87,
-                        //                           fontWeight: FontWeight.bold,
-                        //                           fontSize: 16,
-                        //                         ),
-                        //                       ),
-                        //                       Container(
-                        //                         margin: const EdgeInsets.symmetric(vertical: 4),
-                        //                         width: 40,
-                        //                         height: 3,
-                        //                         color: Colors.blue,
-                        //                       ),
-                        //                       Text(
-                        //                         userInfo['title']!,
-                        //                         style: TextStyle(
-                        //                           color: Colors.grey[600] ?? Colors.grey,
-                        //                           fontSize: 12,
-                        //                         ),
-                        //                       ),
-                        //                     ],
-                        //                   ),
-                        //                 ],
-                        //               ),
-                        //             ),
-                        //
-                        //             // 内容区域使用 Expanded + SingleChildScrollView
-                        //             Expanded(
-                        //               child: SingleChildScrollView(
-                        //                 child: Padding(
-                        //                   padding: const EdgeInsets.all(8.0),
-                        //                   child: Column(
-                        //                     crossAxisAlignment: CrossAxisAlignment.start,
-                        //                     children: [
-                        //                       const SizedBox(height: 8),
-                        //
-                        //                       // 联系方式
-                        //                       // if (userInfo.containsKey('contactMethods') &&
-                        //                       //     (userInfo['contactMethods'] as List).isNotEmpty) ...[
-                        //                       //   _buildSectionTitle('Contact Methods:'),
-                        //                       //   const SizedBox(height: 2),
-                        //                       //   ...(userInfo['contactMethods'] as List).map((method) =>
-                        //                       //       Padding(
-                        //                       //         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-                        //                       //         child: Row(
-                        //                       //           children: [
-                        //                       //             Icon(method['icon'], size: 14, color: method['color']),
-                        //                       //             const SizedBox(width: 8),
-                        //                       //             Expanded(
-                        //                       //               child: Column(
-                        //                       //                 crossAxisAlignment: CrossAxisAlignment.start,
-                        //                       //                 children: [
-                        //                       //                   Text(
-                        //                       //                     method['label'],
-                        //                       //                     style: TextStyle(
-                        //                       //                       fontSize: 10,
-                        //                       //                       fontWeight: FontWeight.w500,
-                        //                       //                       color: Colors.grey[800],
-                        //                       //                     ),
-                        //                       //                   ),
-                        //                       //                   Text(
-                        //                       //                     method['value'],
-                        //                       //                     style: TextStyle(
-                        //                       //                       fontSize: 12,
-                        //                       //                       color: Colors.grey[700],
-                        //                       //                     ),
-                        //                       //                     overflow: TextOverflow.ellipsis,
-                        //                       //                   ),
-                        //                       //                 ],
-                        //                       //               ),
-                        //                       //             ),
-                        //                       //           ],
-                        //                       //         ),
-                        //                       //       ),
-                        //                       //   ),
-                        //                       // ],
-                        //                       if (userInfo.containsKey('contactMethods') && (userInfo['contactMethods'] as List).isNotEmpty) ...[
-                        //                         _buildSectionTitle('Contact Methods:'),
-                        //                         const SizedBox(height: 2),
-                        //                         // 添加高度限制和滚动视图
-                        //                         Container(
-                        //                           constraints: BoxConstraints(
-                        //                             maxHeight: 120, // 限制联系方式区域的最大高度
-                        //                           ),
-                        //                           child: SingleChildScrollView(
-                        //                             child: Column(
-                        //                               children: (userInfo['contactMethods'] as List).map<Widget>((method) =>
-                        //                                   Padding(
-                        //                                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-                        //                                     child: Row(
-                        //                                       children: [
-                        //                                         Icon(method['icon'], size: 14, color: method['color']),
-                        //                                         const SizedBox(width: 8),
-                        //                                         Expanded(
-                        //                                           child: Column(
-                        //                                             crossAxisAlignment: CrossAxisAlignment.start,
-                        //                                             children: [
-                        //                                               Text(
-                        //                                                 method['label'],
-                        //                                                 style: TextStyle(
-                        //                                                   fontSize: 10,
-                        //                                                   fontWeight: FontWeight.w500,
-                        //                                                   color: Colors.grey[800],
-                        //                                                 ),
-                        //                                               ),
-                        //                                               Text(
-                        //                                                 method['value'],
-                        //                                                 style: TextStyle(
-                        //                                                   fontSize: 12,
-                        //                                                   color: Colors.grey[700],
-                        //                                                 ),
-                        //                                                 overflow: TextOverflow.ellipsis,
-                        //                                               ),
-                        //                                             ],
-                        //                                           ),
-                        //                                         ),
-                        //                                       ],
-                        //                                     ),
-                        //                                   ),
-                        //                               ).toList(),
-                        //                             ),
-                        //                           ),
-                        //                         ),
-                        //                       ],
-                        //
-                        //                       const SizedBox(height: 8),
-                        //
-                        //                       // 业务描述
-                        //                       _buildSectionTitle('Business Description:'),
-                        //                       const SizedBox(height: 2),
-                        //                       Padding(
-                        //                         padding: const EdgeInsets.symmetric(horizontal: 12),
-                        //                         child: Text(
-                        //                           _truncateWithEllipsis(userInfo['description']!, _descriptionCharLimit),
-                        //                           style: TextStyle(
-                        //                             color: Colors.grey[700] ?? Colors.grey.shade700,
-                        //                             fontSize: 12,
-                        //                             height: 1.3,
-                        //                           ),
-                        //                           textAlign: TextAlign.left,
-                        //                         ),
-                        //                       ),
-                        //
-                        //                       const SizedBox(height: 8),
-                        //
-                        //                       // 服务列表
-                        //                       _buildSectionTitle('Our Services:'),
-                        //                       const SizedBox(height: 2),
-                        //                       ...services.take(4).map((service) =>
-                        //                           _buildServiceItem(_truncateWithEllipsis(service, _serviceNameCharLimit))
-                        //                       ),
-                        //
-                        //                       const SizedBox(height: 4),
-                        //
-                        //                       // 查看更多详情按钮
-                        //                       GestureDetector(
-                        //                         onTap: _showDetailsDialog,
-                        //                         child: Container(
-                        //                           width: double.infinity,
-                        //                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        //                           margin: const EdgeInsets.only(top: 2, bottom: 4),
-                        //                           decoration: BoxDecoration(
-                        //                             color: Colors.blue.withOpacity(0.1),
-                        //                             borderRadius: BorderRadius.circular(20),
-                        //                           ),
-                        //                           child: Row(
-                        //                             mainAxisAlignment: MainAxisAlignment.center,
-                        //                             children: [
-                        //                               Icon(Icons.touch_app, size: 14, color: Colors.blue[600] ?? Colors.blue),
-                        //                               const SizedBox(width: 6),
-                        //                               Text(
-                        //                                 'Tap to view full details',
-                        //                                 style: TextStyle(
-                        //                                   color: Colors.blue[600] ?? Colors.blue,
-                        //                                   fontSize: 12,
-                        //                                   fontWeight: FontWeight.w500,
-                        //                                 ),
-                        //                               ),
-                        //                             ],
-                        //                           ),
-                        //                         ),
-                        //                       ),
-                        //                     ],
-                        //                   ),
-                        //                 ),
-                        //               ),
-                        //             ),
-                        //           ],
-                        //         ),
-                        //       ),
-                        //
-                        //       // 编辑按钮区域 - 放在最底部且不加入滚动区域
-                        //       Container(
-                        //         width: double.infinity,
-                        //         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                        //         decoration: BoxDecoration(
-                        //           color: Colors.grey[200],
-                        //           borderRadius: const BorderRadius.only(
-                        //             bottomLeft: Radius.circular(16),
-                        //             bottomRight: Radius.circular(16),
-                        //           ),
-                        //         ),
-                        //         child: InkWell(
-                        //           onTap: _showEditForm,
-                        //           child: Row(
-                        //             mainAxisAlignment: MainAxisAlignment.center,
-                        //             children: [
-                        //               Icon(Icons.edit, color: Colors.blue[700], size: 20),
-                        //               const SizedBox(width: 8),
-                        //               Text(
-                        //                 'Edit Profile',
-                        //                 style: TextStyle(
-                        //                   color: Colors.blue[700],
-                        //                   fontSize: 14,
-                        //                   fontWeight: FontWeight.w500,
-                        //                 ),
-                        //               ),
-                        //             ],
-                        //           ),
-                        //         ),
-                        //       ),
-                        //     ],
-                        //   ),
-                        // ),
-                        // 在 build 方法中，修改卡片的内容部分
                         child: Container(
                           width: cardWidth,
                           constraints: BoxConstraints(
-                            maxHeight: constraints.maxHeight * 0.77,
+                            maxHeight: constraints.maxHeight * 0.94,
                           ),
                           decoration: BoxDecoration(
                             color: Colors.white,
@@ -1488,14 +1207,17 @@ class _MeScreenState extends State<MeScreen>
                             ],
                           ),
                           child: Column(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              Expanded(
+                              // Main content area - no longer using Expanded to let it take only the needed space
+                              Flexible(
                                 child: Padding(
                                   padding: const EdgeInsets.all(8.0),
                                   child: Column(
+                                    mainAxisSize: MainAxisSize.min, // Use min to prevent stretching
                                     crossAxisAlignment: CrossAxisAlignment.center,
                                     children: [
-                                      // 公司名称
+                                      // Company name
                                       Container(
                                         margin: const EdgeInsets.only(top: 8, bottom: 12),
                                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -1513,7 +1235,7 @@ class _MeScreenState extends State<MeScreen>
                                         ),
                                       ),
 
-                                      // 姓名和职位
+                                      // Name and title
                                       Padding(
                                         padding: const EdgeInsets.symmetric(horizontal: 8),
                                         child: Row(
@@ -1556,12 +1278,13 @@ class _MeScreenState extends State<MeScreen>
 
                                       const SizedBox(height: 8),
 
-                                      // 联系方式 - 专门的可滚动区域
+                                      // Contact methods
                                       if (userInfo.containsKey('contactMethods') && (userInfo['contactMethods'] as List).isNotEmpty) ...[
                                         _buildSectionTitle('Contact Methods:'),
                                         const SizedBox(height: 2),
-                                        Container(
-                                          height: 120, // 固定高度
+                                        // Fixed height container with scrolling for contacts
+                                        SizedBox(
+                                          height: 100, // Reduced height from 120 to 90
                                           child: SingleChildScrollView(
                                             child: Column(
                                               mainAxisSize: MainAxisSize.min,
@@ -1604,72 +1327,35 @@ class _MeScreenState extends State<MeScreen>
                                         ),
                                       ],
 
-                                      const SizedBox(height: 8),
+                                      const SizedBox(height: 4), // Reduced spacing
 
-                                      // 业务描述
-                                      // _buildSectionTitle('Business Description:'),
-                                      // const SizedBox(height: 2),
-                                      // Padding(
-                                      //   padding: const EdgeInsets.symmetric(horizontal: 12),
-                                      //   child: Text(
-                                      //     _truncateWithEllipsis(userInfo['description']!, _descriptionCharLimit),
-                                      //     style: TextStyle(
-                                      //       color: Colors.grey[700] ?? Colors.grey.shade700,
-                                      //       fontSize: 12,
-                                      //       height: 1.3,
-                                      //     ),
-                                      //     textAlign: TextAlign.left,
-                                      //   ),
-                                      // ),
-                                      // _buildSectionTitle('Business Description:'),
-                                      // const SizedBox(height: 2),
-                                      // Padding(
-                                      //   padding: const EdgeInsets.symmetric(horizontal: 12),
-                                      //   child: Text(
-                                      //     _truncateWithEllipsis(userInfo['description']!, _descriptionCharLimit),
-                                      //     style: TextStyle(
-                                      //       color: Colors.grey[700] ?? Colors.grey.shade700,
-                                      //       fontSize: 12,
-                                      //       height: 1.3,
-                                      //     ),
-                                      //     textAlign: TextAlign.left,
-                                      //   ),
-                                      // ),
+                                      // Business description
                                       _buildSectionTitle('Business Description:'),
-                                      // const SizedBox(height: 2),
                                       Padding(
                                         padding: const EdgeInsets.symmetric(horizontal: 12),
                                         child: Text(
-                                          _truncateWithEllipsis(userInfo['description']!, 500), // 使用更短的限制字符数
+                                          _truncateWithEllipsis(userInfo['description']!, 250), // Reduced character limit
                                           style: TextStyle(
                                             color: Colors.grey[700] ?? Colors.grey.shade700,
                                             fontSize: 12,
                                             height: 1.3,
                                           ),
                                           textAlign: TextAlign.left,
-                                          maxLines: 5, // 限制最大行数
-                                          overflow: TextOverflow.ellipsis, // 使用省略号
+                                          maxLines: 5, // Reduced max lines
+                                          overflow: TextOverflow.ellipsis,
                                         ),
                                       ),
 
-                                      const SizedBox(height: 8),
-
-                                      // 服务列表
-                                      // _buildSectionTitle('Our Services:'),
-                                      // const SizedBox(height: 2),
-                                      // ...services.take(4).map((service) =>
-                                      //     _buildServiceItem(_truncateWithEllipsis(service, _serviceNameCharLimit))
-                                      // ),
-                                      // 修改服务列表显示，只显示前几个
-                                      _buildSectionTitle('Our Services:'),
                                       const SizedBox(height: 2),
-                                      ...services.take(3).map((service) => // 只显示前3个服务
-                                      _buildServiceItem(_truncateWithEllipsis(service, _serviceNameCharLimit))
+
+                                      // Services
+                                      _buildSectionTitle('Our Services:'),
+                                      ...services.take(3).map((service) =>
+                                          _buildServiceItem(_truncateWithEllipsis(service, _serviceNameCharLimit))
                                       ),
-                                      // 如果有更多服务，显示提示
                                       if (services.length > 3)
                                         Padding(
-                                          padding: const EdgeInsets.only(left: 12, right: 12, bottom: 4),
+                                          padding: const EdgeInsets.only(left: 12, right: 12),
                                           child: Text(
                                             '${services.length - 3} more services...',
                                             style: TextStyle(
@@ -1680,15 +1366,14 @@ class _MeScreenState extends State<MeScreen>
                                           ),
                                         ),
 
-                                      const SizedBox(height: 4),
-
-                                      // 查看更多详情按钮
+                                      // View details button (with reduced margins)
+                                      const SizedBox(height: 4), // Small spacing
                                       GestureDetector(
                                         onTap: _showDetailsDialog,
                                         child: Container(
                                           width: double.infinity,
                                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                          margin: const EdgeInsets.only(top: 2, bottom: 4),
+                                          margin: const EdgeInsets.only(bottom: 2), // Reduced margin to bring closer to Edit Profile
                                           decoration: BoxDecoration(
                                             color: Colors.blue.withOpacity(0.1),
                                             borderRadius: BorderRadius.circular(20),
@@ -1715,7 +1400,7 @@ class _MeScreenState extends State<MeScreen>
                                 ),
                               ),
 
-                              // 编辑按钮区域
+                              // Edit button area
                               Container(
                                 width: double.infinity,
                                 padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 16),

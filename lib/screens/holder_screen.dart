@@ -221,9 +221,165 @@ class HolderScreen extends ConsumerWidget {
   }
 
   // 显示卡片对话框
+  // void _showCardDialog(BuildContext context, WidgetRef ref, BusinessCard card, int index) {
+  //   final cardNotifier = ref.read(providerHolderState.notifier);
+  //   cardNotifier.saveState(index, false); // 保存状态但不显示背面
+  //
+  //   showDialog(
+  //     context: context,
+  //     builder: (context) => Dialog(
+  //       shape: RoundedRectangleBorder(
+  //         borderRadius: BorderRadius.circular(16),
+  //       ),
+  //       insetPadding: const EdgeInsets.all(20.0),
+  //       child: Container(
+  //         width: double.infinity,
+  //         constraints: BoxConstraints(
+  //           maxHeight: MediaQuery.of(context).size.height * 0.85,
+  //         ),
+  //         child: Column(
+  //           mainAxisSize: MainAxisSize.min,
+  //           children: [
+  //             Flexible(
+  //               child: Consumer(
+  //                 builder: (context, ref, _) {
+  //                   final showBack = ref.watch(providerHolderState.notifier).showBack;
+  //                   return GestureDetector(
+  //                     onTap: () {
+  //                       cardNotifier.toggleCardFace();
+  //                     },
+  //                     child: SingleChildScrollView(
+  //                       child: AnimatedSwitcher(
+  //                         duration: const Duration(milliseconds: 500),
+  //                         switchInCurve: Curves.easeInOutCubic,
+  //                         switchOutCurve: Curves.easeInOutCubic,
+  //                         transitionBuilder: (Widget child, Animation<double> animation) {
+  //                           final rotate = Tween(begin: pi, end: 0.0).animate(animation);
+  //                           return AnimatedBuilder(
+  //                             animation: rotate,
+  //                             child: child,
+  //                             builder: (context, child) {
+  //                               final isUnder = showBack != (ValueKey('back') == child?.key);
+  //                               final value = isUnder ? min(rotate.value, pi / 2) : rotate.value;
+  //                               return Transform(
+  //                                 transform: Matrix4.rotationY(value),
+  //                                 alignment: Alignment.center,
+  //                                 child: value < pi / 2 ? child : Container(),
+  //                               );
+  //                             },
+  //                           );
+  //                         },
+  //                         child: showBack
+  //                             ? _buildCardBack(card)
+  //                             : _buildCardFront(card),
+  //                       ),
+  //                     ),
+  //                   );
+  //                 },
+  //               ),
+  //             ),
+  //             // 底部操作按钮
+  //             Container(
+  //               padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+  //               decoration: BoxDecoration(
+  //                 color: Colors.grey.shade200,
+  //                 borderRadius: const BorderRadius.only(
+  //                   bottomLeft: Radius.circular(16),
+  //                   bottomRight: Radius.circular(16),
+  //                 ),
+  //               ),
+  //               child: Row(
+  //                 mainAxisAlignment: MainAxisAlignment.spaceAround,
+  //                 children: [
+  //                   _buildActionButton(
+  //                     icon: Icons.phone,
+  //                     label: 'Call',
+  //                     color: Colors.green.shade700,
+  //                     onPressed: () {
+  //                       // 打电话功能
+  //                     },
+  //                   ),
+  //                   _buildActionButton(
+  //                     icon: Icons.message,
+  //                     label: 'Message',
+  //                     color: Colors.orange.shade700,
+  //                     onPressed: () {
+  //                       // 发短信功能
+  //                     },
+  //                   ),
+  //                   _buildActionButton(
+  //                     icon: Icons.email,
+  //                     label: 'Email',
+  //                     color: Colors.blue.shade700,
+  //                     onPressed: () {
+  //                       // 发邮件功能
+  //                     },
+  //                   ),
+  //                   _buildActionButton(
+  //                     icon: Icons.close,
+  //                     label: 'Close',
+  //                     color: Colors.grey.shade700,
+  //                     onPressed: () {
+  //                       Navigator.of(context).pop(); // 关闭对话框
+  //                       cardNotifier.resetState(); // 重置状态
+  //                     },
+  //                   ),
+  //                 ],
+  //               ),
+  //             ),
+  //           ],
+  //         ),
+  //       ),
+  //     ),
+  //   );
+  // }
+  // Replace the current _showCardDialog method with this updated version
   void _showCardDialog(BuildContext context, WidgetRef ref, BusinessCard card, int index) {
     final cardNotifier = ref.read(providerHolderState.notifier);
-    cardNotifier.saveState(index, false); // 保存状态但不显示背面
+    cardNotifier.saveState(index, false); // Save state but don't show back side
+
+    // Define services (same as in MeScreen)
+    List<String> services = [
+      'Professional Consulting',
+      'Premium Products',
+      'After-sales Support',
+      'Quality Assurance',
+    ];
+
+    // Create contact methods from card info (similar to MeScreen format)
+    List<Map<String, dynamic>> contactMethods = [
+      {
+        'label': 'Phone',
+        'value': card.phone,
+        'icon': Icons.phone,
+        'color': Colors.green,
+        'type': 'phone',
+      },
+      {
+        'label': 'Email',
+        'value': card.email,
+        'icon': Icons.email,
+        'color': Colors.blue,
+        'type': 'email',
+      },
+      {
+        'label': 'Fax',
+        'value': card.fax,
+        'icon': Icons.print,
+        'color': Colors.purple,
+        'type': 'fax',
+      },
+      {
+        'label': 'Address',
+        'value': card.address,
+        'icon': Icons.location_on,
+        'color': Colors.red,
+        'type': 'address',
+      },
+    ];
+
+    // Business description text
+    String description = '${card.company} specializes in providing premium ${card.category.toLowerCase()} services with over 10 years of industry experience. We focus on customer satisfaction and professional service.';
 
     showDialog(
       context: context,
@@ -235,101 +391,446 @@ class HolderScreen extends ConsumerWidget {
         child: Container(
           width: double.infinity,
           constraints: BoxConstraints(
+            maxWidth: MediaQuery.of(context).size.width * 0.75,
             maxHeight: MediaQuery.of(context).size.height * 0.85,
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              // Card content - Using the MeScreen style
               Flexible(
-                child: Consumer(
-                  builder: (context, ref, _) {
-                    final showBack = ref.watch(providerHolderState.notifier).showBack;
-                    return GestureDetector(
-                      onTap: () {
-                        cardNotifier.toggleCardFace();
-                      },
-                      child: SingleChildScrollView(
-                        child: AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 500),
-                          switchInCurve: Curves.easeInOutCubic,
-                          switchOutCurve: Curves.easeInOutCubic,
-                          transitionBuilder: (Widget child, Animation<double> animation) {
-                            final rotate = Tween(begin: pi, end: 0.0).animate(animation);
-                            return AnimatedBuilder(
-                              animation: rotate,
-                              child: child,
-                              builder: (context, child) {
-                                final isUnder = showBack != (ValueKey('back') == child?.key);
-                                final value = isUnder ? min(rotate.value, pi / 2) : rotate.value;
-                                return Transform(
-                                  transform: Matrix4.rotationY(value),
-                                  alignment: Alignment.center,
-                                  child: value < pi / 2 ? child : Container(),
-                                );
-                              },
-                            );
-                          },
-                          child: showBack
-                              ? _buildCardBack(card)
-                              : _buildCardFront(card),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Main content area
+                      Flexible(
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              // Company name
+                              Container(
+                                margin: const EdgeInsets.only(top: 8, bottom: 12),
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                                decoration: BoxDecoration(
+                                  border: Border.all(color: Colors.blue, width: 1),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  card.company,
+                                  style: const TextStyle(
+                                    color: Colors.blue,
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
+
+                              // Name and position
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 8),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    CircleAvatar(
+                                      radius: 25,
+                                      backgroundImage: NetworkImage(card.image),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          card.name,
+                                          style: const TextStyle(
+                                            color: Colors.black87,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16,
+                                          ),
+                                        ),
+                                        Container(
+                                          margin: const EdgeInsets.symmetric(vertical: 4),
+                                          width: 40,
+                                          height: 3,
+                                          color: Colors.blue,
+                                        ),
+                                        Text(
+                                          card.title,
+                                          style: TextStyle(
+                                            color: Colors.grey[600] ?? Colors.grey,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+
+                              const SizedBox(height: 8),
+
+                              // Contact methods with scrolling
+                              _buildSectionTitle('Contact Methods:'),
+                              const SizedBox(height: 2),
+                              SizedBox(
+                                height: 170, // Fixed height container
+                                child: SingleChildScrollView(
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: contactMethods.map<Widget>((method) {
+                                      return Padding(
+                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                                        child: Row(
+                                          children: [
+                                            Icon(method['icon'], size: 14, color: method['color']),
+                                            const SizedBox(width: 8),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    method['label'],
+                                                    style: TextStyle(
+                                                      fontSize: 10,
+                                                      fontWeight: FontWeight.w500,
+                                                      color: Colors.grey[800],
+                                                    ),
+                                                  ),
+                                                  Text(
+                                                    method['value'],
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      color: Colors.grey[700],
+                                                    ),
+                                                    overflow: TextOverflow.ellipsis,
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    }).toList(),
+                                  ),
+                                ),
+                              ),
+
+                              const SizedBox(height: 4),
+
+                              // Business description
+                              _buildSectionTitle('Business Description:'),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 12),
+                                child: Text(
+                                  _truncateWithEllipsis(description, 250),
+                                  style: TextStyle(
+                                    color: Colors.grey[700] ?? Colors.grey.shade700,
+                                    fontSize: 12,
+                                    height: 1.3,
+                                  ),
+                                  textAlign: TextAlign.left,
+                                  maxLines: 3,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+
+                              const SizedBox(height: 2),
+
+                              // Services
+                              _buildSectionTitle('Our Services:'),
+                              ...services.take(3).map((service) =>
+                                  _buildServiceItem(service)
+                              ),
+                              if (services.length > 3)
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 12, right: 12),
+                                  child: Text(
+                                    '${services.length - 3} more services...',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey[600],
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                                  ),
+                                ),
+
+                              // View details button
+                              const SizedBox(height: 4),
+                              GestureDetector(
+                                onTap: () {
+                                  _showDetailsDialog(context, card, contactMethods, services);
+                                },
+                                child: Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                  margin: const EdgeInsets.only(bottom: 2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.blue.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.touch_app, size: 14, color: Colors.blue[600] ?? Colors.blue),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        'Tap to view full details',
+                                        style: TextStyle(
+                                          color: Colors.blue[600] ?? Colors.blue,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    );
-                  },
-                ),
-              ),
-              // 底部操作按钮
-              Container(
-                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade200,
-                  borderRadius: const BorderRadius.only(
-                    bottomLeft: Radius.circular(16),
-                    bottomRight: Radius.circular(16),
+
+                      // Action buttons at the bottom
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[200],
+                          borderRadius: const BorderRadius.only(
+                            bottomLeft: Radius.circular(16),
+                            bottomRight: Radius.circular(16),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            _buildActionButton(
+                              icon: Icons.phone,
+                              label: 'Call',
+                              color: Colors.green.shade700,
+                              onPressed: () {
+                                // Call functionality
+                              },
+                            ),
+                            _buildActionButton(
+                              icon: Icons.message,
+                              label: 'Message',
+                              color: Colors.orange.shade700,
+                              onPressed: () {
+                                // Message functionality
+                              },
+                            ),
+                            _buildActionButton(
+                              icon: Icons.email,
+                              label: 'Email',
+                              color: Colors.blue.shade700,
+                              onPressed: () {
+                                // Email functionality
+                              },
+                            ),
+                            _buildActionButton(
+                              icon: Icons.close,
+                              label: 'Close',
+                              color: Colors.grey.shade700,
+                              onPressed: () {
+                                Navigator.of(context).pop(); // Close dialog
+                                cardNotifier.resetState(); // Reset state
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _buildActionButton(
-                      icon: Icons.phone,
-                      label: 'Call',
-                      color: Colors.green.shade700,
-                      onPressed: () {
-                        // 打电话功能
-                      },
-                    ),
-                    _buildActionButton(
-                      icon: Icons.message,
-                      label: 'Message',
-                      color: Colors.orange.shade700,
-                      onPressed: () {
-                        // 发短信功能
-                      },
-                    ),
-                    _buildActionButton(
-                      icon: Icons.email,
-                      label: 'Email',
-                      color: Colors.blue.shade700,
-                      onPressed: () {
-                        // 发邮件功能
-                      },
-                    ),
-                    _buildActionButton(
-                      icon: Icons.close,
-                      label: 'Close',
-                      color: Colors.grey.shade700,
-                      onPressed: () {
-                        Navigator.of(context).pop(); // 关闭对话框
-                        cardNotifier.resetState(); // 重置状态
-                      },
-                    ),
-                  ],
                 ),
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+// Add this method to show the details dialog (similar to MeScreen's _showDetailsDialog)
+  void _showDetailsDialog(BuildContext context, BusinessCard card, List<Map<String, dynamic>> contactMethods, List<String> services) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Contact Details'),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildDetailItem('Company', card.company),
+              _buildDetailItem('Name', card.name),
+              _buildDetailItem('Title', card.title),
+
+              // Contact methods section
+              const SizedBox(height: 10),
+              const Text(
+                'Contact Methods:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 6),
+
+              // Display all contact methods
+              ...contactMethods.map(
+                    (method) => _buildContactDetailItem(
+                  icon: method['icon'],
+                  label: method['label'],
+                  value: method['value'],
+                  color: method['color'],
+                ),
+              ),
+
+              _buildDetailItem('Description',
+                  '${card.company} specializes in providing premium ${card.category.toLowerCase()} services with over 10 years of industry experience. We focus on customer satisfaction and professional service.'
+              ),
+
+              const SizedBox(height: 10),
+              const Text(
+                'Services:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              ...services.map(
+                    (service) => Padding(
+                  padding: const EdgeInsets.only(left: 8.0, top: 4.0),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.check_circle,
+                        color: Colors.green[600] ?? Colors.green,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(child: Text(service)),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+// Helper methods from MeScreen
+  String _truncateWithEllipsis(String text, int maxLength) {
+    return text.length <= maxLength
+        ? text
+        : '${text.substring(0, maxLength)}...';
+  }
+
+  Widget _buildDetailItem(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 4),
+          Text(value),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildContactDetailItem({
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color color,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 8.0, top: 4.0, bottom: 4.0),
+      child: InkWell(
+        onTap: () {
+          // Actions for different contact types
+          if (icon == Icons.phone) {
+            // Launch phone
+          } else if (icon == Icons.email) {
+            // Launch email
+          } else if (icon == Icons.location_on) {
+            // Launch maps
+          }
+        },
+        child: Row(
+          children: [
+            Icon(icon, color: color, size: 16),
+            const SizedBox(width: 8),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(fontWeight: FontWeight.w500, fontSize: 12),
+                ),
+                Text(value, style: TextStyle(fontSize: 14, color: color)),
+              ],
+            ),
+            const Spacer(),
+            Icon(Icons.arrow_forward_ios, size: 12, color: color),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: Row(
+        children: [
+          Container(width: 3, height: 14, color: Colors.blue),
+          const SizedBox(width: 6),
+          Text(
+            title,
+            style: const TextStyle(
+              color: Colors.black87,
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildServiceItem(String service) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 12, right: 12, bottom: 4),
+      child: Row(
+        children: [
+          Icon(
+            Icons.check_circle,
+            color: Colors.green[600] ?? Colors.green,
+            size: 14,
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              service,
+              style: TextStyle(color: Colors.grey[700], fontSize: 12),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -636,29 +1137,6 @@ class HolderScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildServiceItem(String service) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        children: [
-          Icon(
-            Icons.check_circle,
-            color: Colors.green.shade600,
-            size: 16,
-          ),
-          const SizedBox(width: 8),
-          Text(
-            service,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey.shade700,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildCardBack(BusinessCard card) {
     return Container(
       key: const ValueKey('back'),
@@ -943,7 +1421,7 @@ class HolderScreen extends ConsumerWidget {
       onTap: onPressed,
       borderRadius: BorderRadius.circular(8),
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [

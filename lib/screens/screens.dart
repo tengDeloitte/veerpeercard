@@ -5,5 +5,5 @@ export 'main_screen.dart';
 export 'me_screen.dart';
 export 'messages_screen.dart';
 export 'moments_screen.dart';
-export 'parcelbox_screen.dart';
+export 'parcelbox_screen/parcelbox_screen.dart';
 export 'user_settings_screen.dart';

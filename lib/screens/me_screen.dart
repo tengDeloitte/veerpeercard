@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import 'dart:async';
-
 class MeScreen extends StatefulWidget {
   const MeScreen({super.key});
 
@@ -460,6 +459,7 @@ class _MeScreenState extends State<MeScreen>
     // 添加联系方式的控制器
     final phoneController = TextEditingController();
     final emailController = TextEditingController();
+    final addressController = TextEditingController();
     final websiteController = TextEditingController();
 
     // 从contactMethods中初始化基本联系方式控制器
@@ -471,6 +471,9 @@ class _MeScreenState extends State<MeScreen>
             break;
           case 'email':
             emailController.text = method['value'];
+            break;
+          case 'address':
+            addressController.text = method['value'];
             break;
           case 'website':
             websiteController.text = method['value'];
@@ -602,6 +605,15 @@ class _MeScreenState extends State<MeScreen>
                             controller: emailController,
                             icon: Icons.email,
                             iconColor: Colors.blue[700] ?? Colors.blue,
+                          ),
+                          const SizedBox(height: 12),
+
+                          // 地址
+                          _buildContactFormField(
+                            label: 'Address',
+                            controller: addressController,
+                            icon: Icons.location_on,
+                            iconColor: Colors.orange[800] ?? Colors.blue,
                           ),
                           const SizedBox(height: 12),
 
@@ -943,6 +955,17 @@ class _MeScreenState extends State<MeScreen>
                               });
                             }
 
+                            if (addressController.text.isNotEmpty) {
+                              updatedContactMethods.add({
+                                'label': 'Address',
+                                'value': addressController.text,
+                                'icon': Icons.location_on,
+                                'color': Colors.orange,
+                                'type': 'address',
+                              });
+                            }
+
+
                             if (websiteController.text.isNotEmpty) {
                               updatedContactMethods.add({
                                 'label': 'Website',
@@ -1023,6 +1046,8 @@ class _MeScreenState extends State<MeScreen>
       {'icon': Icons.person, 'color': Colors.indigo[700] ?? Colors.indigo},
       {'icon': Icons.business, 'color': Colors.brown[700] ?? Colors.brown},
       {'icon': Icons.facebook, 'color': Colors.blue[800] ?? Colors.blue},
+      {'icon': Icons.fax, 'color': Colors.red[800] ?? Colors.blue},
+      {'icon': Icons.location_on, 'color': Colors.orange[800] ?? Colors.blue},
     ];
 
     showDialog(
@@ -1192,7 +1217,7 @@ class _MeScreenState extends State<MeScreen>
                         child: Container(
                           width: cardWidth,
                           constraints: BoxConstraints(
-                            maxHeight: constraints.maxHeight * 0.94,
+                            maxHeight: constraints.maxHeight * 0.97,
                           ),
                           decoration: BoxDecoration(
                             color: Colors.white,
@@ -1283,8 +1308,9 @@ class _MeScreenState extends State<MeScreen>
                                         _buildSectionTitle('Contact Methods:'),
                                         const SizedBox(height: 2),
                                         // Fixed height container with scrolling for contacts
-                                        SizedBox(
-                                          height: 100, // Reduced height from 120 to 90
+                                        Flexible(
+                                          // height: 135,
+                                          flex: 2,
                                           child: SingleChildScrollView(
                                             child: Column(
                                               mainAxisSize: MainAxisSize.min,
@@ -1373,7 +1399,7 @@ class _MeScreenState extends State<MeScreen>
                                         child: Container(
                                           width: double.infinity,
                                           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                          margin: const EdgeInsets.only(bottom: 2), // Reduced margin to bring closer to Edit Profile
+                                          margin: const EdgeInsets.only(bottom: 2, top: 4), // Reduced margin to bring closer to Edit Profile
                                           decoration: BoxDecoration(
                                             color: Colors.blue.withOpacity(0.1),
                                             borderRadius: BorderRadius.circular(20),
@@ -1401,6 +1427,35 @@ class _MeScreenState extends State<MeScreen>
                               ),
 
                               // Edit button area
+                              // Container(
+                              //   width: double.infinity,
+                              //   padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
+                              //   decoration: BoxDecoration(
+                              //     color: Colors.grey[200],
+                              //     borderRadius: const BorderRadius.only(
+                              //       bottomLeft: Radius.circular(16),
+                              //       bottomRight: Radius.circular(16),
+                              //     ),
+                              //   ),
+                              //   child: InkWell(
+                              //     onTap: _showEditForm,
+                              //     child: Row(
+                              //       mainAxisAlignment: MainAxisAlignment.center,
+                              //       children: [
+                              //         Icon(Icons.edit, color: Colors.blue[700], size: 20),
+                              //         const SizedBox(width: 6),
+                              //         Text(
+                              //           'Edit Profile',
+                              //           style: TextStyle(
+                              //             color: Colors.blue[700],
+                              //             fontSize: 14,
+                              //             fontWeight: FontWeight.w500,
+                              //           ),
+                              //         ),
+                              //       ],
+                              //     ),
+                              //   ),
+                              // ),
                               Container(
                                 width: double.infinity,
                                 padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
@@ -1411,23 +1466,67 @@ class _MeScreenState extends State<MeScreen>
                                     bottomRight: Radius.circular(16),
                                   ),
                                 ),
-                                child: InkWell(
-                                  onTap: _showEditForm,
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(Icons.edit, color: Colors.blue[700], size: 20),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        'Edit Profile',
-                                        style: TextStyle(
-                                          color: Colors.blue[700],
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w500,
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    // 编辑按钮
+                                    Expanded(
+                                      child: InkWell(
+                                        onTap: _showEditForm,
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Icon(Icons.edit, color: Colors.blue[700], size: 20),
+                                            const SizedBox(width: 6),
+                                            Text(
+                                              'Edit Profile',
+                                              style: TextStyle(
+                                                color: Colors.blue[700],
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ),
-                                    ],
-                                  ),
+                                    ),
+                                    // 垂直分隔线
+                                    Container(
+                                      height: 24,
+                                      width: 1,
+                                      color: Colors.grey[300],
+                                    ),
+                                    // 附近名片按钮
+                                    // Expanded(
+                                    //   child: InkWell(
+                                    //     onTap: () {
+                                    //       Navigator.push(
+                                    //         context,
+                                    //         MaterialPageRoute(
+                                    //           builder: (context) => NearbyCardsScreen(
+                                    //             userInfo: userInfo,
+                                    //           ),
+                                    //         ),
+                                    //       );
+                                    //     },
+                                    //     child: Row(
+                                    //       mainAxisAlignment: MainAxisAlignment.center,
+                                    //       children: [
+                                    //         Icon(Icons.near_me, color: Colors.green[700], size: 20),
+                                    //         const SizedBox(width: 6),
+                                    //         Text(
+                                    //           'Nearby Cards',
+                                    //           style: TextStyle(
+                                    //             color: Colors.green[700],
+                                    //             fontSize: 14,
+                                    //             fontWeight: FontWeight.w500,
+                                    //           ),
+                                    //         ),
+                                    //       ],
+                                    //     ),
+                                    //   ),
+                                    // ),
+                                  ],
                                 ),
                               ),
                             ],

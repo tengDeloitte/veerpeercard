@@ -770,20 +770,28 @@ class HolderScreen extends ConsumerWidget {
           }
         },
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Icon(icon, color: color, size: 16),
             const SizedBox(width: 8),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(fontWeight: FontWeight.w500, fontSize: 12),
-                ),
-                Text(value, style: TextStyle(fontSize: 14, color: color)),
-              ],
+            Expanded(  // 使用Expanded来确保文本有足够空间
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: TextStyle(fontWeight: FontWeight.w500, fontSize: 12),
+                  ),
+                  Text(
+                    value,
+                    style: TextStyle(fontSize: 14, color: color),
+                    softWrap: true,  // 允许文本换行
+                    overflow: TextOverflow.visible,  // 确保文本不会被截断
+                  ),
+                ],
+              ),
             ),
-            const Spacer(),
+            const SizedBox(width: 4),  // 提供固定间距
             Icon(Icons.arrow_forward_ios, size: 12, color: color),
           ],
         ),

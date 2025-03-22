@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:veerpeercard/providers/holder_screen_provider.dart';
@@ -220,120 +218,6 @@ class HolderScreen extends ConsumerWidget {
     );
   }
 
-  // 显示卡片对话框
-  // void _showCardDialog(BuildContext context, WidgetRef ref, BusinessCard card, int index) {
-  //   final cardNotifier = ref.read(providerHolderState.notifier);
-  //   cardNotifier.saveState(index, false); // 保存状态但不显示背面
-  //
-  //   showDialog(
-  //     context: context,
-  //     builder: (context) => Dialog(
-  //       shape: RoundedRectangleBorder(
-  //         borderRadius: BorderRadius.circular(16),
-  //       ),
-  //       insetPadding: const EdgeInsets.all(20.0),
-  //       child: Container(
-  //         width: double.infinity,
-  //         constraints: BoxConstraints(
-  //           maxHeight: MediaQuery.of(context).size.height * 0.85,
-  //         ),
-  //         child: Column(
-  //           mainAxisSize: MainAxisSize.min,
-  //           children: [
-  //             Flexible(
-  //               child: Consumer(
-  //                 builder: (context, ref, _) {
-  //                   final showBack = ref.watch(providerHolderState.notifier).showBack;
-  //                   return GestureDetector(
-  //                     onTap: () {
-  //                       cardNotifier.toggleCardFace();
-  //                     },
-  //                     child: SingleChildScrollView(
-  //                       child: AnimatedSwitcher(
-  //                         duration: const Duration(milliseconds: 500),
-  //                         switchInCurve: Curves.easeInOutCubic,
-  //                         switchOutCurve: Curves.easeInOutCubic,
-  //                         transitionBuilder: (Widget child, Animation<double> animation) {
-  //                           final rotate = Tween(begin: pi, end: 0.0).animate(animation);
-  //                           return AnimatedBuilder(
-  //                             animation: rotate,
-  //                             child: child,
-  //                             builder: (context, child) {
-  //                               final isUnder = showBack != (ValueKey('back') == child?.key);
-  //                               final value = isUnder ? min(rotate.value, pi / 2) : rotate.value;
-  //                               return Transform(
-  //                                 transform: Matrix4.rotationY(value),
-  //                                 alignment: Alignment.center,
-  //                                 child: value < pi / 2 ? child : Container(),
-  //                               );
-  //                             },
-  //                           );
-  //                         },
-  //                         child: showBack
-  //                             ? _buildCardBack(card)
-  //                             : _buildCardFront(card),
-  //                       ),
-  //                     ),
-  //                   );
-  //                 },
-  //               ),
-  //             ),
-  //             // 底部操作按钮
-  //             Container(
-  //               padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
-  //               decoration: BoxDecoration(
-  //                 color: Colors.grey.shade200,
-  //                 borderRadius: const BorderRadius.only(
-  //                   bottomLeft: Radius.circular(16),
-  //                   bottomRight: Radius.circular(16),
-  //                 ),
-  //               ),
-  //               child: Row(
-  //                 mainAxisAlignment: MainAxisAlignment.spaceAround,
-  //                 children: [
-  //                   _buildActionButton(
-  //                     icon: Icons.phone,
-  //                     label: 'Call',
-  //                     color: Colors.green.shade700,
-  //                     onPressed: () {
-  //                       // 打电话功能
-  //                     },
-  //                   ),
-  //                   _buildActionButton(
-  //                     icon: Icons.message,
-  //                     label: 'Message',
-  //                     color: Colors.orange.shade700,
-  //                     onPressed: () {
-  //                       // 发短信功能
-  //                     },
-  //                   ),
-  //                   _buildActionButton(
-  //                     icon: Icons.email,
-  //                     label: 'Email',
-  //                     color: Colors.blue.shade700,
-  //                     onPressed: () {
-  //                       // 发邮件功能
-  //                     },
-  //                   ),
-  //                   _buildActionButton(
-  //                     icon: Icons.close,
-  //                     label: 'Close',
-  //                     color: Colors.grey.shade700,
-  //                     onPressed: () {
-  //                       Navigator.of(context).pop(); // 关闭对话框
-  //                       cardNotifier.resetState(); // 重置状态
-  //                     },
-  //                   ),
-  //                 ],
-  //               ),
-  //             ),
-  //           ],
-  //         ),
-  //       ),
-  //     ),
-  //   );
-  // }
-  // Replace the current _showCardDialog method with this updated version
   void _showCardDialog(BuildContext context, WidgetRef ref, BusinessCard card, int index) {
     final cardNotifier = ref.read(providerHolderState.notifier);
     cardNotifier.saveState(index, false); // Save state but don't show back side
@@ -658,7 +542,7 @@ class HolderScreen extends ConsumerWidget {
     );
   }
 
-// Add this method to show the details dialog (similar to MeScreen's _showDetailsDialog)
+  //Add this method to show the details dialog (similar to MeScreen's _showDetailsDialog)
   void _showDetailsDialog(BuildContext context, BusinessCard card, List<Map<String, dynamic>> contactMethods, List<String> services) {
     showDialog(
       context: context,

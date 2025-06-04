@@ -1,26 +1,33 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import 'dart:async';
-class MeScreen extends StatefulWidget {
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:veerpeercard/services/nearby_card_service.dart';
+import 'package:veerpeercard/widgets/avatar_picker.dart';
+import 'package:veerpeercard/providers/user_profile_provider.dart';
+
+class MeScreen extends ConsumerStatefulWidget {
   const MeScreen({super.key});
 
   @override
-  State<MeScreen> createState() => _MeScreenState();
+  ConsumerState<MeScreen> createState() => _MeScreenState();
 }
 
-class _MeScreenState extends State<MeScreen>
+class _MeScreenState extends ConsumerState<MeScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<Alignment> _animation;
   Alignment _dragAlignment = Alignment.center;
   final math.Random _random = math.Random();
+  final NearbyCardService _nearbyService = NearbyCardService();
 
   // 个人信息
   Map<String, dynamic> userInfo = {
     'companyName': 'CHEN AUTO GROUP',
     'name': 'Michael Chen',
     'title': 'Sales Representative',
-    'avatar': 'https://via.placeholder.com/150',
+    'avatar': '',  // 这将在 initState 中从 Firebase 获取
     'description':
         'Chen Auto Group specializes in providing premium auto sales services with over 10 years of industry experience. We focus on customer satisfaction and professional service.',
     'contactMethods': [
@@ -54,6 +61,27 @@ class _MeScreenState extends State<MeScreen>
       },
     ],
   };
+
+  // 获取当前用户头像URL
+  String? _getCurrentAvatarUrl() {
+    final userProfile = ref.watch(userProfileProvider);
+    final user = FirebaseAuth.instance.currentUser;
+    
+    String? avatarUrl;
+    userProfile.whenData((profile) {
+      avatarUrl = profile?.avatar;
+    });
+    
+    // 如果 Provider 中没有头像，则使用 Firebase Auth 的头像
+    avatarUrl ??= user?.photoURL;
+    
+    // 确保不返回空字符串
+    if (avatarUrl != null && avatarUrl!.isEmpty) {
+      avatarUrl = null;
+    }
+    
+    return avatarUrl;
+  }
 
   void _showAddContactMethodDialog(BuildContext context) {
     final labelController = TextEditingController();
@@ -142,6 +170,42 @@ class _MeScreenState extends State<MeScreen>
       // 设置较长的动画持续时间，让弹跳效果持续更长
       duration: const Duration(seconds: 10),
     );
+
+    // 初始化时从 Firebase 获取用户头像
+    _initializeUserInfo();
+
+    // 自动启用附近可见性
+    _enableNearbyVisibility();
+  }
+
+  // 初始化用户信息，包括头像
+  void _initializeUserInfo() {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      setState(() {
+        // 更新用户基本信息
+        userInfo['name'] = user.displayName ?? userInfo['name'];
+        userInfo['avatar'] = user.photoURL ?? '';
+        
+        // 更新联系方式中的邮箱
+        if (userInfo['contactMethods'] != null) {
+          final contactMethods = userInfo['contactMethods'] as List;
+          for (var method in contactMethods) {
+            if (method['type'] == 'email') {
+              method['value'] = user.email ?? method['value'];
+              break;
+            }
+          }
+        }
+      });
+    }
+  }
+
+  // 启用附近可见性的方法
+  Future<void> _enableNearbyVisibility() async {
+    if (!_nearbyService.isVisible) {
+      await _nearbyService.enableVisibility(userInfo);
+    }
   }
 
   @override
@@ -436,6 +500,60 @@ class _MeScreenState extends State<MeScreen>
     );
   }
 
+  // 显示头像选择器
+  void _showAvatarPicker(BuildContext context, Map<String, dynamic> editedInfo) {
+    // 获取当前头像URL
+    final currentAvatarUrl = _getCurrentAvatarUrl();
+    
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Update Avatar',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 20),
+              AvatarPicker(
+                currentAvatarUrl: currentAvatarUrl,
+                onAvatarUpdated: (newAvatarUrl) {
+                  debugPrint('MeScreen: onAvatarUpdated called with URL: $newAvatarUrl');
+                  // 使用Provider更新头像
+                  ref.read(userProfileProvider.notifier).updateAvatar(newAvatarUrl);
+                  setState(() {
+                    userInfo['avatar'] = newAvatarUrl;
+                    editedInfo['avatar'] = newAvatarUrl;
+                  });
+                  
+                  // 确保对话框关闭
+                  Navigator.of(context).pop();
+                  debugPrint('MeScreen: Dialog closed');
+                  
+                  // 触发随机动画来显示更新效果
+                  _startRandomAnimation();
+                  
+                  // 显示成功消息
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Avatar updated successfully!'),
+                      backgroundColor: Colors.green,
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   // 显示编辑表单
   void _showEditForm() {
     // 创建临时变量来保存编辑值
@@ -551,15 +669,29 @@ class _MeScreenState extends State<MeScreen>
                               Column(
                                 children: [
                                   CircleAvatar(
-                                    radius: 30,
-                                    backgroundImage: NetworkImage(
-                                      editedInfo['avatar']!,
-                                    ),
+                                    radius: 25,
+                                    backgroundImage: () {
+                                      final avatarUrl = _getCurrentAvatarUrl();
+                                      return (avatarUrl != null && avatarUrl.isNotEmpty) 
+                                          ? NetworkImage(avatarUrl) 
+                                          : null;
+                                    }(),
+                                    backgroundColor: Colors.grey.shade300,
+                                    child: () {
+                                      final avatarUrl = _getCurrentAvatarUrl();
+                                      return (avatarUrl == null || avatarUrl.isEmpty)
+                                          ? Icon(
+                                              Icons.person,
+                                              size: 30,
+                                              color: Colors.grey.shade600,
+                                            )
+                                          : null;
+                                    }(),
                                   ),
                                   const SizedBox(height: 8),
                                   TextButton(
                                     onPressed: () {
-                                      // 这里添加选择头像的功能
+                                      _showAvatarPicker(context, editedInfo);
                                     },
                                     child: const Text('Update Avatar'),
                                   ),
@@ -886,7 +1018,8 @@ class _MeScreenState extends State<MeScreen>
                                                 .isNotEmpty) {
                                               setState(() {
                                                 editedServices.add(
-                                                  newServiceController.text,
+                                                  newServiceController
+                                                      .text,
                                                 );
                                                 serviceControllers.add(
                                                   TextEditingController(
@@ -1268,7 +1401,23 @@ class _MeScreenState extends State<MeScreen>
                                           children: [
                                             CircleAvatar(
                                               radius: 25,
-                                              backgroundImage: NetworkImage(userInfo['avatar']!),
+                                              backgroundImage: () {
+                                                final avatarUrl = _getCurrentAvatarUrl();
+                                                return (avatarUrl != null && avatarUrl.isNotEmpty) 
+                                                    ? NetworkImage(avatarUrl) 
+                                                    : null;
+                                              }(),
+                                              backgroundColor: Colors.grey.shade300,
+                                              child: () {
+                                                final avatarUrl = _getCurrentAvatarUrl();
+                                                return (avatarUrl == null || avatarUrl.isEmpty)
+                                                    ? Icon(
+                                                        Icons.person,
+                                                        size: 30,
+                                                        color: Colors.grey.shade600,
+                                                      )
+                                                    : null;
+                                              }(),
                                             ),
                                             const SizedBox(width: 12),
                                             Column(
@@ -1425,37 +1574,6 @@ class _MeScreenState extends State<MeScreen>
                                   ),
                                 ),
                               ),
-
-                              // Edit button area
-                              // Container(
-                              //   width: double.infinity,
-                              //   padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
-                              //   decoration: BoxDecoration(
-                              //     color: Colors.grey[200],
-                              //     borderRadius: const BorderRadius.only(
-                              //       bottomLeft: Radius.circular(16),
-                              //       bottomRight: Radius.circular(16),
-                              //     ),
-                              //   ),
-                              //   child: InkWell(
-                              //     onTap: _showEditForm,
-                              //     child: Row(
-                              //       mainAxisAlignment: MainAxisAlignment.center,
-                              //       children: [
-                              //         Icon(Icons.edit, color: Colors.blue[700], size: 20),
-                              //         const SizedBox(width: 6),
-                              //         Text(
-                              //           'Edit Profile',
-                              //           style: TextStyle(
-                              //             color: Colors.blue[700],
-                              //             fontSize: 14,
-                              //             fontWeight: FontWeight.w500,
-                              //           ),
-                              //         ),
-                              //       ],
-                              //     ),
-                              //   ),
-                              // ),
                               Container(
                                 width: double.infinity,
                                 padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
@@ -1466,67 +1584,40 @@ class _MeScreenState extends State<MeScreen>
                                     bottomRight: Radius.circular(16),
                                   ),
                                 ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    // 编辑按钮
-                                    Expanded(
-                                      child: InkWell(
-                                        onTap: _showEditForm,
-                                        child: Row(
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          children: [
-                                            Icon(Icons.edit, color: Colors.blue[700], size: 20),
-                                            const SizedBox(width: 6),
-                                            Text(
-                                              'Edit Profile',
-                                              style: TextStyle(
-                                                color: Colors.blue[700],
-                                                fontSize: 14,
-                                                fontWeight: FontWeight.w500,
+                                child: InkWell(
+                                  onTap: _showEditForm,
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      // 编辑按钮
+                                      Expanded(
+                                        child: InkWell(
+                                          onTap: _showEditForm,
+                                          child: Row(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              Icon(Icons.edit, color: Colors.blue[700], size: 20),
+                                              const SizedBox(width: 6),
+                                              Text(
+                                                'Edit Profile',
+                                                style: TextStyle(
+                                                  color: Colors.blue[700],
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
                                               ),
-                                            ),
-                                          ],
+                                            ],
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                    // 垂直分隔线
-                                    Container(
-                                      height: 24,
-                                      width: 1,
-                                      color: Colors.grey[300],
-                                    ),
-                                    // 附近名片按钮
-                                    // Expanded(
-                                    //   child: InkWell(
-                                    //     onTap: () {
-                                    //       Navigator.push(
-                                    //         context,
-                                    //         MaterialPageRoute(
-                                    //           builder: (context) => NearbyCardsScreen(
-                                    //             userInfo: userInfo,
-                                    //           ),
-                                    //         ),
-                                    //       );
-                                    //     },
-                                    //     child: Row(
-                                    //       mainAxisAlignment: MainAxisAlignment.center,
-                                    //       children: [
-                                    //         Icon(Icons.near_me, color: Colors.green[700], size: 20),
-                                    //         const SizedBox(width: 6),
-                                    //         Text(
-                                    //           'Nearby Cards',
-                                    //           style: TextStyle(
-                                    //             color: Colors.green[700],
-                                    //             fontSize: 14,
-                                    //             fontWeight: FontWeight.w500,
-                                    //           ),
-                                    //         ),
-                                    //       ],
-                                    //     ),
-                                    //   ),
-                                    // ),
-                                  ],
+                                      // 垂直分隔线
+                                      Container(
+                                        height: 24,
+                                        width: 1,
+                                        color: Colors.grey[300],
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ],

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:veerpeercard/providers/bottom_tabs_provider.dart';
 import 'package:veerpeercard/providers/theme_provider.dart';
+import 'package:veerpeercard/providers/user_profile_provider.dart';
 import 'package:veerpeercard/screens/user_settings_screen.dart';
 import 'screens.dart';
 
@@ -26,12 +27,24 @@ class _MainScreenState extends ConsumerState<MainScreen> {
   Widget build(BuildContext context) {
     final currentTabIndex = ref.watch(providerCurrentTabIndex);
     final currentTheme = ref.watch(providerTheme);
+    final userProfile = ref.watch(userProfileProvider);
     final user = FirebaseAuth.instance.currentUser;
-    final userPhotoURL = user?.photoURL;
 
     final isDarkMode = currentTheme == ThemeMode.dark ||
         (currentTheme == ThemeMode.system &&
             MediaQuery.of(context).platformBrightness == Brightness.dark);
+
+    // 获取头像URL，优先使用userProfile中的avatar
+    String? avatarUrl;
+    userProfile.whenData((profile) {
+      avatarUrl = profile?.avatar;
+    });
+    avatarUrl ??= user?.photoURL;
+    
+    // 确保avatarUrl不是空字符串
+    if (avatarUrl != null && avatarUrl!.isEmpty) {
+      avatarUrl = null;
+    }
 
     final screens = [
       const MessagesScreen(),
@@ -79,8 +92,8 @@ class _MainScreenState extends ConsumerState<MainScreen> {
               backgroundColor: Theme.of(context).colorScheme.primary,
               radius: 16.0,
               // 修改这里以使用自定义照片
-              backgroundImage: userPhotoURL != null ? NetworkImage(userPhotoURL) : null,
-              child: userPhotoURL == null
+              backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl!) : null,
+              child: avatarUrl == null
                   ? Text(
                 user?.email?.substring(0, 1).toUpperCase() ?? 'U',
                 style: TextStyle(

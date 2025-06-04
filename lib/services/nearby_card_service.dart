@@ -29,7 +29,7 @@ class NearbyCardService {
   DateTime? _lastLocationUpdateTime;
 
   // 默认搜索半径（米）
-  int _searchRadius = 5000; // 5公里, 约3.1英里
+  int _searchRadius = 16093;
 
   // 位置更新间隔（毫秒）
   final int _updateInterval = 300000; // 5分钟更新一次
